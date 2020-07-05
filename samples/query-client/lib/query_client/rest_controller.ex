@@ -2,26 +2,29 @@ defmodule QueryClient.RestController do
   use Plug.Router
   require Logger
 
-  @target "Receiver67"
+  @target "sample-query-server"
+  @query_path "query1"
 
   plug :match
   plug :dispatch
 
 
-  get "/make_async_query" do
-    query = AsyncQuery.new("prueba1", Person.new_sample())
-    response = DirectAsyncGateway.request_reply_wait(query, @target)
-    send_resp(conn, 200, "Ok")
+  get "/query" do
+    query = AsyncQuery.new(@query_path, Person.new_sample())
+    {:ok, response} = DirectAsyncGateway.request_reply_wait(query, @target)
+    #send_resp(conn, 200, "Pong")
+    conn
+    |> put_resp_header("Content-Type", "application/json")
+    |> send_resp(200, json(response))
   end
 
   get "/ping" do
     send_resp(conn, 200, "Pong")
   end
 
-
-  def print_json(data) do
+  def json(data) do
     {:ok, json} = Poison.encode(data)
-    IO.puts(json)
+    json
   end
 
 end

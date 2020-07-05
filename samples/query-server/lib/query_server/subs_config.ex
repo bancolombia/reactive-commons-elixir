@@ -14,6 +14,7 @@ defmodule QueryServer.SubsConfig do
   end
 
   def echo(request) do
+    Process.sleep(150)
     %{
       response: "OK",
       request: request
