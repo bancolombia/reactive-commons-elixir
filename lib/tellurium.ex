@@ -8,8 +8,8 @@ defmodule Tellurium do
 
   ## Examples
 
-      iex> Tellurium.hello()
-      :world
+    query = AsyncQuery.new("query_path", %{field: "value", field_n: 42})
+    {:ok, response} = DirectAsyncGateway.request_reply_wait(query, @target)
 
   """
   def hello do
