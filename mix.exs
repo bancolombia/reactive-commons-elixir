@@ -4,11 +4,18 @@ defmodule Tellurium.MixProject do
   def project do
     [
       app: :tellurium,
-      version: "0.1.0",
+      version: "0.1.3",
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      package: package(),
+      description: description(),
+      source_url: "https://github.com/dbuos/tellurium"
     ]
+  end
+
+  defp description() do
+    "Domain driven async abstractions like DomainEventBus, Event subscriptions/emit, Async Command handling and Async Req/Reply."
   end
 
   # Run "mix help compile.app" to learn about applications.
@@ -25,15 +32,15 @@ defmodule Tellurium.MixProject do
       {:poison, "~> 4.0"},
       {:amqp, "~> 1.4"},
       {:uuid, "~> 1.1"},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
     ]
   end
 
   defp package do
     [
-      files: ["lib", "mix.exs", "README", "LICENSE*"],
       maintainers: ["Daniel Bustamante Ospina"],
-      licenses: ["Apache 2.0"],
+      licenses: ["Apache-2.0"],
       links: %{"GitHub" => "https://github.com/dbuos/tellurium"}
     ]
   end

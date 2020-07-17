@@ -5,6 +5,17 @@ defmodule MessageRuntime do
     Supervisor.start_link(__MODULE__, conf, name: __MODULE__)
   end
 
+
+  @impl true
+  def init(config = %{extractor_debug: true}) do
+    children = [
+      {MessageContext, config},
+      {ConnectionsHolder, []},
+      {MessageExtractor, []},
+    ]
+    Supervisor.init(children, strategy: :one_for_one)
+  end
+
   @impl true
   def init(config) do
     children = [

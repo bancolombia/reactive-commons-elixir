@@ -31,7 +31,7 @@ defmodule DirectAsyncGateway do
 
   def wait_reply(correlation_id) do
     receive do
-      {:reply, correlation_id, reply_message} -> {:ok, Poison.decode!(reply_message)}
+      {:reply, ^correlation_id, reply_message} -> {:ok, Poison.decode!(reply_message)}
       after 5_000 -> :timeout
     end
   end

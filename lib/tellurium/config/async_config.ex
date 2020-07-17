@@ -4,11 +4,13 @@ defmodule AsyncConfig do
     :reply_queue,
     :query_queue,
     :command_queue,
+    :event_queue,
     :reply_exchange,
     :direct_exchange,
     :reply_routing_key,
     :connection_assignation,
-    :connection_props
+    :connection_props,
+    extractor_debug: false
   ]
 
   def new(app_name) do

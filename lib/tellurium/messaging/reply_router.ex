@@ -16,7 +16,7 @@ defmodule ReplyRouter do
     GenServer.call(__MODULE__, {:register, correlation_id, pid})
   end
 
-  defp delete_reply_route(correlation_id) do
+  def delete_reply_route(correlation_id) do
     GenServer.cast(__MODULE__, {:delete, correlation_id})
   end
 

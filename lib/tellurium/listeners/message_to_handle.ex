@@ -6,9 +6,10 @@ defmodule MessageToHandle do
     :payload,
     :chan,
     :handlers_ref,
+    :meta,
   ]
 
-  def new(%{delivery_tag: tag, redelivered: redelivered, headers: headers}, payload, chan, handlers_ref) do
+  def new(meta = %{delivery_tag: tag, redelivered: redelivered, headers: headers}, payload, chan, handlers_ref) do
     %__MODULE__{
       delivery_tag: tag,
       redelivered: redelivered,
@@ -16,6 +17,7 @@ defmodule MessageToHandle do
       payload: payload,
       chan: chan,
       handlers_ref: handlers_ref,
+      meta: meta,
     }
   end
 

@@ -6,9 +6,12 @@ defmodule MessageContext do
   @default_values %{
     reply_exchange: "globalReply",
     direct_exchange: "directMessages",
+    events_exchange: "domainEvents",
     connection_assignation: %{
       ReplyListener: ListenerConn,
       QueryListener: ListenerConn,
+      EventListener: ListenerConn,
+      MessageExtractor: ListenerConn,
       MessageSender: SenderConn,
       ListenerController: SenderConn,
     }
@@ -31,6 +34,7 @@ defmodule MessageContext do
       reply_routing_key: NameGenerator.generate(),
       reply_queue: NameGenerator.generate(app_name),
       query_queue: "#{app_name}.query",
+      event_queue: "#{app_name}.subsEvents",
       command_queue: "#{app_name}",
     }
   end
@@ -54,9 +58,11 @@ defmodule MessageContext do
   def reply_queue_name(), do: config.reply_queue
   def query_queue_name(), do: config.query_queue
   def command_queue_name(), do: config.command_queue
+  def event_queue_name(), do: config.event_queue
   def reply_routing_key(), do: config.reply_routing_key
   def reply_exchange_name(), do: config.reply_exchange
   def direct_exchange_name(), do: config.direct_exchange
+  def events_exchange_name(), do: config.events_exchange
 
   def config() do
     [{:conf, config}] = :ets.lookup(@table_name, :conf)
