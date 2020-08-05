@@ -16,6 +16,7 @@ defmodule EventListener do
     {:ok, %__MODULE__{queue_name: queue}}
   end
 
+  @impl true
   def handle_info({:connected, conn}, state = %{queue_name: queue_name}) do
     {:ok, chan} = AMQP.Channel.open(conn)
     {:ok, consumer_tag} = AMQP.Basic.consume(chan, queue_name)
@@ -32,17 +33,17 @@ defmodule EventListener do
     {:stop, :normal, state}
   end
 
-  def handle_info({:basic_cancel_ok, %{consumer_tag: consumer_tag}}, state) do
+  def handle_info({:basic_cancel_ok, %{consumer_tag: _}}, state) do
     Logger.warn("Query listener consumer cancelled!")
     {:noreply, state}
   end
 
-  def handle_info({:basic_deliver, payload, props = %{delivery_tag: tag, redelivered: redelivered}}, state = %{chan: chan}) do
+  def handle_info({:basic_deliver, payload, props = %{delivery_tag: _tag}}, state) do
     consume(props, payload, state)
     {:noreply, state}
   end
 
-  def consume(props = %{delivery_tag: tag, redelivered: redelivered}, payload, state = %{chan: chan}) do
+  def consume(props = %{delivery_tag: _, redelivered: _}, payload, _state = %{chan: chan}) do
     message_to_handle = MessageToHandle.new(props, payload, chan, @handlers_table_name)
     spawn_link(EventExecutor, :handle_message, [message_to_handle])
   end

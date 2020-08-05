@@ -2,7 +2,7 @@ defmodule DirectAsyncGateway do
   @direct_exchange "directMessages"
 
 
-  def request_reply(query = %AsyncQuery{}, nil), do: raise("nil target")
+  def request_reply(%AsyncQuery{}, nil), do: raise("nil target")
   def request_reply(query = %AsyncQuery{}, target_name) do
     correlation_id = NameGenerator.generate()
     msg = OutMessage.new(

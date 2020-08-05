@@ -29,6 +29,7 @@ defmodule ConnectionsHolder do
     Atom.to_string(component_name) |> String.split(".") |> Enum.at(1) |> String.to_atom()
   end
 
+  @impl true
   def handle_call({:get_connection, component_name, pid}, _from, state = %{connection_assignation: connection_assignation}) do
     IO.puts("##############DEBUG###########################")
     IO.inspect(connection_assignation)
@@ -41,20 +42,23 @@ defmodule ConnectionsHolder do
     end
   end
 
+  @impl true
   def handle_info({:send_connection, pid, component_name}, state = %{connections: connections, connection_assignation: connection_assignation}) do
     conn_name = Map.get(connection_assignation, component_name)
     case Map.get(connections, conn_name) do
-      %{conn_ref: conn_ref} = conn_info -> send(pid, {:connected, conn_ref})
+      %{conn_ref: conn_ref} -> send(pid, {:connected, conn_ref})
       _conn_info -> Process.send_after(self(), {:send_connection, pid, component_name}, 750)
     end
     {:noreply, state}
   end
 
+  @impl true
   def handle_info(:init_connections, state = %{url: url, connections: connections}) do
     Enum.each(connections, fn {conn_name, _info} -> start_connection(conn_name, url) end)
     {:noreply, state}
   end
 
+  @impl true
   def handle_info({:connected, name, conn}, state = %{connections: connections}) do
     connections = put_conn_ref(connections, name, conn)
     {:noreply, %{state | connections: connections}}

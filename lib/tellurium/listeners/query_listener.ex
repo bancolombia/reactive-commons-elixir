@@ -16,33 +16,38 @@ defmodule QueryListener do
     {:ok, %__MODULE__{queue_name: queue}}
   end
 
+  @impl true
   def handle_info({:connected, conn}, state = %{queue_name: queue_name}) do
     {:ok, chan} = AMQP.Channel.open(conn)
     {:ok, consumer_tag} = AMQP.Basic.consume(chan, queue_name)
     {:noreply, %{state | chan: chan, consumer_tag: consumer_tag, conn: conn}}
   end
 
+  @impl true
   def handle_info({:basic_consume_ok, %{consumer_tag: consumer_tag}}, state) do
     Logger.info("Query listener registered with consumer tag: #{inspect(consumer_tag)}")
     {:noreply, %{state | consumer_tag: consumer_tag}}
   end
 
+  @impl true
   def handle_info({:basic_cancel, %{consumer_tag: consumer_tag}}, state) do
     Logger.error("Query listener consumer stoped by the broker: #{consumer_tag}")
     {:stop, :normal, state}
   end
 
-  def handle_info({:basic_cancel_ok, %{consumer_tag: consumer_tag}}, state) do
+  @impl true
+  def handle_info({:basic_cancel_ok, %{consumer_tag: _consumer_tag}}, state) do
     Logger.warn("Query listener consumer cancelled!")
     {:noreply, state}
   end
 
-  def handle_info({:basic_deliver, payload, props = %{delivery_tag: tag, redelivered: redelivered}}, state = %{chan: chan}) do
+  @impl true
+  def handle_info({:basic_deliver, payload, props = %{delivery_tag: _tag, redelivered: _}}, state = %{chan: _chan}) do
     consume(props, payload, state)
     {:noreply, state}
   end
 
-  def consume(props = %{delivery_tag: tag, redelivered: redelivered}, payload, state = %{chan: chan}) do
+  def consume(props = %{delivery_tag: _tag, redelivered: _}, payload, _state = %{chan: chan}) do
     message_to_handle = MessageToHandle.new(props, payload, chan, @handlers_table_name)
     spawn_link(QueryExecutor, :handle_message, [message_to_handle])
   end

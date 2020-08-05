@@ -22,13 +22,7 @@ defmodule ListenerController do
     {:ok, %__MODULE__{}}
   end
 
-  def handle_info({:connected, conn}, state = %__MODULE__{}) do
-    state = %__MODULE__{state | conn: conn}
-    assure_basic_topology(state)
-    {:noreply, %{state | connected: true}}
-  end
-
-  defp assure_basic_topology(state = %{conn: conn}) do
+  defp assure_basic_topology(_state = %{conn: conn}) do
     {:ok, chan} = AMQP.Channel.open(conn)
     create_direct_messages_topology(chan)
     AMQP.Channel.close(chan)
@@ -53,6 +47,7 @@ defmodule ListenerController do
     GenServer.call(__MODULE__, {:configure_handlers, config})
   end
 
+  @impl true
   def handle_call({:configure_handlers, %HandlersConfig{query_listeners: query_listeners, command_listeners: command_listeners, event_listeners: event_listeners}}, _from, state = %__MODULE__{}) do
     save_handlers(query_listeners, @query_handlers_table_name)
     save_handlers(command_listeners, @command_handlers_table_name)
@@ -61,7 +56,15 @@ defmodule ListenerController do
     {:reply, :ok, state}
   end
 
+  @impl true
   def handle_info(:start_listeners, state = %__MODULE__{}), do: {:noreply, start_listeners(state)}
+
+  @impl true
+  def handle_info({:connected, conn}, state = %__MODULE__{}) do
+    state = %__MODULE__{state | conn: conn}
+    assure_basic_topology(state)
+    {:noreply, %{state | connected: true}}
+  end
 
   defp start_listeners(state = %__MODULE__{started_listeners: false, conn: conn, connected: true}) do
     DynamicSupervisor.start_child(ListenerController.Supervisor, QueryListener)
@@ -70,6 +73,14 @@ defmodule ListenerController do
     #TODO: start other listeners
     Logger.info("Listeners started!")
     %{state | started_listeners: true}
+  end
+
+  defp start_listeners(state = %__MODULE__{started_listeners: true}), do: state
+
+  defp start_listeners(state = %__MODULE__{started_listeners: false, connected: false}) do
+    Logger.info("Retry start listeners in 1 seg")
+    Process.send_after(self(), :start_listeners, 1000)
+    state
   end
 
   defp create_event_topology(conn) do
@@ -88,14 +99,6 @@ defmodule ListenerController do
     :ets.tab2list(@event_handlers_table_name) |> Enum.each(create_binding)
     AMQP.Channel.close(chan)
     Logger.info("Event topology assured and channel released!")
-  end
-
-  defp start_listeners(state = %__MODULE__{started_listeners: true}), do: state
-
-  defp start_listeners(state = %__MODULE__{started_listeners: false, connected: false}) do
-    Logger.info("Retry start listeners in 1 seg")
-    Process.send_after(self(), :start_listeners, 1000)
-    state
   end
 
   defp save_handlers(handlers, table_name) do

@@ -1,7 +1,7 @@
 defmodule EventExecutor do
   require Logger
 
-  def handle_message(msg = %MessageToHandle{delivery_tag: tag, payload: payload, headers: headers, chan: chan, handlers_ref: table}) do
+  def handle_message(msg = %MessageToHandle{delivery_tag: tag, payload: payload, chan: chan, handlers_ref: table}) do
     try do
       handler_path = get_handler_path(msg)
       [{_path, handler_fn}] = :ets.lookup(table, handler_path)

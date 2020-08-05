@@ -55,14 +55,14 @@ defmodule MessageContext do
     :ets.insert(@table_name, {:conf, config})
   end
 
-  def reply_queue_name(), do: config.reply_queue
-  def query_queue_name(), do: config.query_queue
-  def command_queue_name(), do: config.command_queue
-  def event_queue_name(), do: config.event_queue
-  def reply_routing_key(), do: config.reply_routing_key
-  def reply_exchange_name(), do: config.reply_exchange
-  def direct_exchange_name(), do: config.direct_exchange
-  def events_exchange_name(), do: config.events_exchange
+  def reply_queue_name(), do: config().reply_queue
+  def query_queue_name(), do: config().query_queue
+  def command_queue_name(), do: config().command_queue
+  def event_queue_name(), do: config().event_queue
+  def reply_routing_key(), do: config().reply_routing_key
+  def reply_exchange_name(), do: config().reply_exchange
+  def direct_exchange_name(), do: config().direct_exchange
+  def events_exchange_name(), do: config().events_exchange
 
   def config() do
     [{:conf, config}] = :ets.lookup(@table_name, :conf)

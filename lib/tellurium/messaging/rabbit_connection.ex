@@ -11,6 +11,7 @@ defmodule RabbitConnection do
     GenServer.start_link(__MODULE__, opts, opts)
   end
 
+  @impl true
   def init(opts) do
     url = Keyword.get(opts, :url)
     name = Keyword.get(opts, :name, "NoName")
@@ -26,11 +27,12 @@ defmodule RabbitConnection do
     end
   end
 
+  @impl true
   def handle_call(:get_connection, _from, state) do
     {:reply, state.connection, state}
   end
 
-
+  @impl true
   def handle_info({:connect, url}, state) do
     case Connection.open(url) do
       {:ok, conn} ->
@@ -45,14 +47,14 @@ defmodule RabbitConnection do
     end
   end
 
-  defp notify_connection(%{parent_pid: nil}, conn), do: :ok
-  defp notify_connection(%{parent_pid: parent_pid, name: name}, conn) do
-    send(parent_pid, {:connected, name, conn})
-  end
-
-
+  @impl true
   def handle_info({:DOWN, _, :process, _pid, reason}, _) do
     {:stop, {:connection_lost, reason}, nil}
+  end
+
+  defp notify_connection(%{parent_pid: nil}, _conn), do: :ok
+  defp notify_connection(%{parent_pid: parent_pid, name: name}, conn) do
+    send(parent_pid, {:connected, name, conn})
   end
 
 end
