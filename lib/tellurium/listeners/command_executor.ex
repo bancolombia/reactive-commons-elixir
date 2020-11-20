@@ -10,6 +10,7 @@ defmodule CommandExecutor do
     catch
       info, error ->
         Logger.error("Error encounter while processing message #{inspect(info)}: #{inspect(error)}")
+        Logger.error(Exception.format(:error, error, __STACKTRACE__))
         Logger.warn("Message info: #{inspect(msg)}")
         Process.sleep(200)
         :ok = AMQP.Basic.reject(chan, tag)
