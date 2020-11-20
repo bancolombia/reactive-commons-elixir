@@ -53,6 +53,7 @@ defmodule ListenerController do
     save_handlers(command_listeners, @command_handlers_table_name)
     save_handlers(event_listeners, @event_handlers_table_name)
     send(self(), :start_listeners)
+    IO.puts("Configuring listeners handlers")
     {:reply, :ok, state}
   end
 
@@ -69,13 +70,17 @@ defmodule ListenerController do
   defp start_listeners(state = %__MODULE__{started_listeners: false, conn: conn, connected: true}) do
     DynamicSupervisor.start_child(ListenerController.Supervisor, QueryListener)
     DynamicSupervisor.start_child(ListenerController.Supervisor, EventListener)
+    DynamicSupervisor.start_child(ListenerController.Supervisor, CommandListener)
     create_event_topology(conn)
     #TODO: start other listeners
     Logger.info("Listeners started!")
     %{state | started_listeners: true}
   end
 
-  defp start_listeners(state = %__MODULE__{started_listeners: true}), do: state
+  defp start_listeners(state = %__MODULE__{started_listeners: true, conn: conn}) do
+    create_event_topology(conn)
+    state
+  end
 
   defp start_listeners(state = %__MODULE__{started_listeners: false, connected: false}) do
     Logger.info("Retry start listeners in 1 seg")

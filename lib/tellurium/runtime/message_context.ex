@@ -10,6 +10,7 @@ defmodule MessageContext do
     connection_assignation: %{
       ReplyListener: ListenerConn,
       QueryListener: ListenerConn,
+      CommandListener: ListenerConn,
       EventListener: ListenerConn,
       MessageExtractor: ListenerConn,
       MessageSender: SenderConn,
