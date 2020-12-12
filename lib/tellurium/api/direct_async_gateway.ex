@@ -43,7 +43,7 @@ defmodule DirectAsyncGateway do
       headers: headers(),
       exchange_name: @direct_exchange,
       routing_key: target_name,
-      payload: Poison.encode!(query)
+      payload: Poison.encode!(command)
     )
     case MessageSender.send_message(msg) do
       :ok -> :ok
