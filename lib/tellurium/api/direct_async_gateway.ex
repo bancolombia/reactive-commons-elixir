@@ -37,11 +37,32 @@ defmodule DirectAsyncGateway do
   end
 
 
+  def send_command(%Command{}, nil), do: raise("nil target")
+  def send_command(command = %Command{}, target_name) do
+    msg = OutMessage.new(
+      headers: headers(),
+      exchange_name: @direct_exchange,
+      routing_key: target_name,
+      payload: Poison.encode!(query)
+    )
+    case MessageSender.send_message(msg) do
+      :ok -> :ok
+      other -> other
+    end
+  end
+
+
   def headers(%AsyncQuery{resource: resource}, correlation_id) do
     [
       {MessageHeaders.h_REPLY_ID, :longstr, MessageContext.reply_routing_key()},
       {MessageHeaders.h_SERVED_QUERY_ID, :longstr, resource},
       {MessageHeaders.h_CORRELATION_ID, :longstr, correlation_id},
+      {MessageHeaders.h_SOURCE_APPLICATION, :longstr, MessageContext.config().application_name},
+    ]
+  end
+
+  def headers() do
+    [
       {MessageHeaders.h_SOURCE_APPLICATION, :longstr, MessageContext.config().application_name},
     ]
   end
