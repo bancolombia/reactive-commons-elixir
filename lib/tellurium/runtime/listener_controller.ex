@@ -19,6 +19,7 @@ defmodule ListenerController do
     :ets.new(@query_handlers_table_name, [:named_table, read_concurrency: true])
     :ets.new(@event_handlers_table_name, [:named_table, read_concurrency: true])
     :ets.new(@command_handlers_table_name, [:named_table, read_concurrency: true])
+    Process.send_after(self(), {:configure_handlers, MessageContext.handlers()}, 1000)
     {:ok, %__MODULE__{}}
   end
 
@@ -47,13 +48,11 @@ defmodule ListenerController do
     GenServer.call(__MODULE__, {:configure_handlers, config})
   end
 
+
   @impl true
-  def handle_call({:configure_handlers, %HandlersConfig{query_listeners: query_listeners, command_listeners: command_listeners, event_listeners: event_listeners}}, _from, state = %__MODULE__{}) do
-    save_handlers(query_listeners, @query_handlers_table_name)
-    save_handlers(command_listeners, @command_handlers_table_name)
-    save_handlers(event_listeners, @event_handlers_table_name)
-    send(self(), :start_listeners)
-    IO.puts("Configuring listeners handlers")
+  def handle_call({:configure_handlers, conf = %HandlersConfig{}}, _from, state = %__MODULE__{}) do
+    MessageContext.save_handlers_config(conf)
+    configure_handlers(conf)
     {:reply, :ok, state}
   end
 
@@ -67,13 +66,33 @@ defmodule ListenerController do
     {:noreply, %{state | connected: true}}
   end
 
+  @impl true
+  def handle_info({:configure_handlers, conf = %HandlersConfig{}}, state = %__MODULE__{}) do
+    configure_handlers(conf)
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info({:configure_handlers, []}, state) do
+    Logger.info("No saved state for handlers")
+    {:noreply, state}
+  end
+
+  defp configure_handlers(%HandlersConfig{query_listeners: query_listeners, command_listeners: command_listeners, event_listeners: event_listeners}) do
+    save_handlers(query_listeners, @query_handlers_table_name)
+    save_handlers(command_listeners, @command_handlers_table_name)
+    save_handlers(event_listeners, @event_handlers_table_name)
+    send(self(), :start_listeners)
+    IO.puts("Configuring listeners handlers 34")
+  end
+
   defp start_listeners(state = %__MODULE__{started_listeners: false, conn: conn, connected: true}) do
     DynamicSupervisor.start_child(ListenerController.Supervisor, QueryListener)
     DynamicSupervisor.start_child(ListenerController.Supervisor, EventListener)
     DynamicSupervisor.start_child(ListenerController.Supervisor, CommandListener)
     create_event_topology(conn)
     #TODO: start other listeners
-    Logger.info("Listeners started!")
+    Logger.info("Listeners started 22!")
     %{state | started_listeners: true}
   end
 

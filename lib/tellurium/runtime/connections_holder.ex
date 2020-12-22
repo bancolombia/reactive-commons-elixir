@@ -31,9 +31,6 @@ defmodule ConnectionsHolder do
 
   @impl true
   def handle_call({:get_connection, component_name, pid}, _from, state = %{connection_assignation: connection_assignation}) do
-    IO.puts("##############DEBUG###########################")
-    IO.inspect(connection_assignation)
-    IO.inspect(component_name)
     if Map.has_key?(connection_assignation, component_name) do
       send(self(), {:send_connection, pid, component_name})
       {:reply, :ok, state}

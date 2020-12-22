@@ -1,6 +1,6 @@
 defmodule MessageContext do
   use GenServer
-
+  require Logger
   @table_name :msg_ctx
 
   @default_values %{
@@ -28,6 +28,10 @@ defmodule MessageContext do
     |> put_route_info()
     |> save_in_ets()
     {:ok, nil}
+  end
+
+  def save_handlers_config(config = %HandlersConfig{}) do
+    GenServer.call(__MODULE__, {:save_handlers_config, config})
   end
 
   defp put_route_info(config = %AsyncConfig{application_name: app_name}) do
@@ -69,6 +73,25 @@ defmodule MessageContext do
     [{:conf, config}] = :ets.lookup(@table_name, :conf)
     config
   end
+
+  def handlers() do
+    case :ets.lookup(@table_name, :handlers) do
+      [{:handlers, config}] -> config
+      [] -> []
+    end
+  end
+
+  @impl true
+  def handle_call({:save_handlers_config, config}, _from, state) do
+    Logger.info "Saving handlers config!"
+    true = :ets.insert(@table_name, {:handlers, config})
+    {:reply, :ok, state}
+  end
+
+  def table() do
+    :ets.tab2list(@table_name)
+  end
+
 
 
 end
