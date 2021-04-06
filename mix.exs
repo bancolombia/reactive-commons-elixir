@@ -33,7 +33,8 @@ defmodule Tellurium.MixProject do
       {:amqp, "~> 1.4"},
       {:uuid, "~> 1.1"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
-      {:telemetry, "~> 0.4.2"}
+      {:telemetry, "~> 0.4.2"},
+      {:mock, "~> 0.3.0", only: :test}
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
     ]
   end

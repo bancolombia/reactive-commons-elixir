@@ -10,6 +10,9 @@ defmodule AsyncConfig do
     :reply_routing_key,
     :connection_assignation,
     :connection_props,
+    :with_dlq_retry,
+    :retry_delay,
+    :max_retries,
     extractor_debug: false
   ]
 

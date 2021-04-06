@@ -6,5 +6,7 @@ defmodule MessageHeaders do
   def h_SERVED_QUERY_ID, do: "x-serveQuery-id"
   def h_SOURCE_APPLICATION, do: "sourceApplication"
   def h_SIGNAL_TYPE, do: "x-signal-type"
+  def h_X_DEATH, do: "x-death"
+  def h_X_DEATH_COUNT, do: "count"
 
 end

@@ -15,7 +15,10 @@ defmodule MessageContext do
       MessageExtractor: ListenerConn,
       MessageSender: SenderConn,
       ListenerController: SenderConn,
-    }
+    },
+    with_dlq_retry: false,
+    retry_delay: 500,
+    max_retries: 10,
   }
 
   def start_link(config = %AsyncConfig{}) do
@@ -68,6 +71,10 @@ defmodule MessageContext do
   def reply_exchange_name(), do: config().reply_exchange
   def direct_exchange_name(), do: config().direct_exchange
   def events_exchange_name(), do: config().events_exchange
+  def with_dlq_retry(), do: config().with_dlq_retry
+  def retry_delay(), do: config().retry_delay
+  def max_retries(), do: config().max_retries
+  def application_name(), do: config().application_name
 
   def config() do
     [{:conf, config}] = :ets.lookup(@table_name, :conf)

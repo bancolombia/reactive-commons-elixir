@@ -51,7 +51,7 @@ defmodule ConnectionsHolder do
 
   @impl true
   def handle_info(:init_connections, state = %{url: url, connections: connections}) do
-    Enum.each(connections, fn {conn_name, _info} -> start_connection(conn_name, url) end)
+    for {conn_name, _info} <- connections, do: start_connection(conn_name, url)
     {:noreply, state}
   end
 
