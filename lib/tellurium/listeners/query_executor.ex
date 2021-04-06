@@ -1,5 +1,5 @@
 defmodule QueryExecutor do
-  use GenericExecutor
+  use GenericExecutor, type: :query
 
   @impl true
   def decode(%MessageToHandle{payload: payload}) do

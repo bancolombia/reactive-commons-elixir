@@ -24,10 +24,11 @@ defmodule GenericExecutor do
   """
   @callback on_post_process(handler_response(), MessageToHandle.t()) :: any()
 
-  defmacro __using__(_opts) do
+  defmacro __using__(opts) do
     quote do
       import unquote(__MODULE__)
       @behaviour unquote(__MODULE__)
+      @message_type unquote(opts[:type])
 
       def handle_message(msg = %MessageToHandle{delivery_tag: tag, chan: chan, handlers_ref: table}) do
         t0 = :erlang.monotonic_time()
@@ -43,7 +44,7 @@ defmodule GenericExecutor do
             t1 = :erlang.monotonic_time()
             time = :erlang.convert_time_unit(t1 - t0, :native, :microsecond)
             error_info = {info, error, time, __STACKTRACE__}
-            requeue_or_ack(msg, error_info)
+            requeue_or_ack(msg, error_info, @message_type)
         end
       end
 
@@ -62,10 +63,10 @@ defmodule GenericExecutor do
   @dlq_message "ATTENTION!! Sending message to Retry DLQ"
   @fast_retry_message "ATTENTION!! Fast retry message to same Queue"
 
-  def requeue_or_ack(msg = %MessageToHandle{headers: headers, chan: chan, delivery_tag: tag, redelivered: redelivered}, error_info) do
+  def requeue_or_ack(msg = %MessageToHandle{headers: headers, chan: chan, delivery_tag: tag, redelivered: redelivered}, error_info, msg_type) do
     num = HeaderExtractor.get_x_death_count(headers)
     is_redelivered = redelivered || num > 0
-    send_error_to_custom_reporter(msg, error_info, is_redelivered)
+    send_error_to_custom_reporter(msg, msg_type, error_info, is_redelivered)
     if is_redelivered && MessageContext.with_dlq_retry do
       if num >= MessageContext.max_retries() do
         log_error(msg, error_info, :definitive_discard)
@@ -82,9 +83,9 @@ defmodule GenericExecutor do
     end
   end
 
-  defp send_error_to_custom_reporter(msg, {info, error, time, trace}, redelivered) do
+  defp send_error_to_custom_reporter(msg, type, {info, error, time, trace}, redelivered) do
     :telemetry.execute(
-      [:async, :event, :failure],
+      [:async, type, :failure],
       %{duration: time},
       %{message: msg, type: info, error: error, trace: trace, redelivered: redelivered}
     )

@@ -6,7 +6,7 @@ defmodule DiscardNotifier do
     event = create_event(message, payload)
     case DomainEventBus.emit(event) do
       :ok -> :ok
-      error -> Logger.error("FATAL!! unable to notify Discard of message!! #{inspect(event)}")
+      error -> Logger.error("FATAL!! unable to notify Discard of message!! #{inspect({event, error})}")
     end
   end
 
