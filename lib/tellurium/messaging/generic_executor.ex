@@ -38,14 +38,26 @@ defmodule GenericExecutor do
           [{_path, handler_fn}] = :ets.lookup(table, handler_path)
           handler_result = handler_fn.(event)
           on_post_process(handler_result, msg)
+          report_to_telemetry(@message_type, handler_path, calc_duration(t0), :success)
           :ok = ack(chan, tag)
         catch
           info, error ->
-            t1 = :erlang.monotonic_time()
-            time = :erlang.convert_time_unit(t1 - t0, :native, :microsecond)
-            error_info = {info, error, time, __STACKTRACE__}
+            duration = calc_duration(t0)
+            error_info = {info, error, duration, __STACKTRACE__}
+            report_error_to_telemetry(msg, duration)
             requeue_or_ack(msg, error_info, @message_type)
         end
+      end
+
+      defp report_error_to_telemetry(msg, duration) do
+        spawn(fn ->
+          handler_path = try do
+            get_handler_path(msg, decode(msg))
+          catch
+            _type, _err -> :erlang.atom_to_binary(@message_type) <> ".unknown"
+          end
+          report_to_telemetry(@message_type, handler_path, duration, :failure)
+        end)
       end
 
       def decode(%MessageToHandle{payload: payload}) do
@@ -89,6 +101,20 @@ defmodule GenericExecutor do
       %{duration: time},
       %{message: msg, type: info, error: error, trace: trace, redelivered: redelivered}
     )
+  end
+
+
+  def report_to_telemetry(type, handler_path, duration, result) when result in [:success, :failure] do
+    type_str = :erlang.atom_to_binary(type)
+    transaction = "#{type_str}.#{handler_path}"
+    :telemetry.execute([:async, :message, :completed],
+      %{duration: duration},
+      %{transaction: transaction, result: :erlang.atom_to_binary(result)})
+  end
+
+  def calc_duration(t0) do
+    t1 = :erlang.monotonic_time()
+    :erlang.convert_time_unit(t1 - t0, :native, :microsecond)
   end
 
   defp log_error(msg, {info, error, _, stacktrace}, type) do
