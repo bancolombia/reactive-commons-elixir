@@ -7,6 +7,7 @@ defmodule MessageContext do
     reply_exchange: "globalReply",
     direct_exchange: "directMessages",
     events_exchange: "domainEvents",
+    connection_props: "amqp://guest:guest@localhost",
     connection_assignation: %{
       ReplyListener: ListenerConn,
       QueryListener: ListenerConn,
@@ -38,7 +39,8 @@ defmodule MessageContext do
   end
 
   defp put_route_info(config = %AsyncConfig{application_name: app_name}) do
-    %AsyncConfig{config |
+    %AsyncConfig{
+      config |
       reply_routing_key: NameGenerator.generate(),
       reply_queue: NameGenerator.generate(app_name),
       query_queue: "#{app_name}.query",
@@ -48,7 +50,8 @@ defmodule MessageContext do
   end
 
   defp put_default_values(config = %AsyncConfig{}) do
-    @default_values |> Enum.reduce(config, fn {key, value}, conf -> put_if_nil(conf, key, value) end)
+    @default_values
+    |> Enum.reduce(config, fn {key, value}, conf -> put_if_nil(conf, key, value) end)
   end
 
   defp put_if_nil(map, key, value) do
@@ -98,7 +101,5 @@ defmodule MessageContext do
   def table() do
     :ets.tab2list(@table_name)
   end
-
-
 
 end

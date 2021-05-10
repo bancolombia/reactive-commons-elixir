@@ -1,8 +1,8 @@
-defmodule TelluriumTest do
+defmodule ReactiveCommonsTest do
   use ExUnit.Case
-  doctest Tellurium
+  doctest ReactiveCommons
 
   test "greets the world" do
-    assert Tellurium.hello() == :world
+    assert ReactiveCommons.hello() == :world
   end
 end

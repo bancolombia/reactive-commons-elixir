@@ -1,16 +1,23 @@
-defmodule Tellurium.MixProject do
+defmodule ReactiveCommons.MixProject do
   use Mix.Project
+
+  @version "0.6.1"
 
   def project do
     [
-      app: :tellurium,
-      version: "0.6.1",
+      app: :reactive_commons,
+      version: @version,
       elixir: "~> 1.10",
+      docs: [
+        extras: ["README.md"],
+        main: "readme",
+        source_ref: "v#{@version}"
+      ],
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
       description: description(),
-      source_url: "https://github.com/dbuos/tellurium"
+      source_url: "https://github.com/dbuos/reactive_commons"
     ]
   end
 
@@ -41,9 +48,12 @@ defmodule Tellurium.MixProject do
 
   defp package do
     [
+      files: ["lib", "mix.exs", "README.md", "LICENSE"],
       maintainers: ["Daniel Bustamante Ospina"],
       licenses: ["Apache-2.0"],
-      links: %{"GitHub" => "https://github.com/dbuos/tellurium"}
+      links: %{
+        "GitHub" => "https://github.com/dbuos/reactive_commons"
+      }
     ]
   end
 
