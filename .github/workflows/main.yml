@@ -2,9 +2,7 @@ name: Reactive Commons CI/RM
 
 on:
   push:
-    branches:
-      - main
-      - feature/version
+    branches: [ main ]
   pull_request:
     branches: [ main ]
   release:
