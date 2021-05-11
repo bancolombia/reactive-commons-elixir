@@ -14,24 +14,41 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Elixir
-      uses: erlef/setup-elixir@885971a72ed1f9240973bd92ab57af8c1aa68f24
-      with:
-        elixir-version: '1.11.4' # Define the elixir version [required]
-        otp-version: '23' # Define the OTP version [required]
-    - name: Restore dependencies cache
-      uses: actions/cache@v2
-      with:
-        path: deps
-        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
-        restore-keys: ${{ runner.os }}-mix-
-    - name: Install dependencies
-      run: mix deps.get
-    - name: Run tests
-      run: mix test
-    - name: Publish
-#      if: github.event_name == 'release'
-      run: mix hex.publish --replace --yes
-      env:
-        HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
+      - uses: actions/checkout@v2
+      - name: Set up Elixir
+        uses: erlef/setup-elixir@885971a72ed1f9240973bd92ab57af8c1aa68f24
+        with:
+          elixir-version: '1.11.4' # Define the elixir version [required]
+          otp-version: '23' # Define the OTP version [required]
+      - name: Restore dependencies cache
+        uses: actions/cache@v2
+        with:
+          path: deps
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: ${{ runner.os }}-mix-
+      - name: Install dependencies
+        run: mix deps.get
+      - name: Run tests
+        run: mix test
+      - name: Set release env
+        if: github.event_name == 'release'
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - name: Upgrade mix.exs
+        if: github.event_name == 'release'
+        run: sed -i 's/@version \".*\"/@version "${{ env.RELEASE_VERSION }}"/g' mix.exs
+      - name: Save version
+        if: github.event_name == 'release'
+        uses: github-actions-x/commit@v2.8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          push-branch: feature/version
+          commit-message: 'Upgrade version to ${{ env.RELEASE_VERSION }}'
+          force-add: "true"
+          files: mix.exs
+          name: Release Bot
+          email: release-bot@bancolombia.com.co
+      - name: Publish
+        if: github.event_name == 'release'
+        run: mix hex.publish --replace --yes
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
