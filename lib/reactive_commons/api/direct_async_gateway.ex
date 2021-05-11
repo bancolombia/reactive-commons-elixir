@@ -1,4 +1,7 @@
 defmodule DirectAsyncGateway do
+  @moduledoc """
+    This module allows the commands emission and async queries requests.
+  """
   @direct_exchange "directMessages"
 
 
@@ -32,7 +35,8 @@ defmodule DirectAsyncGateway do
   def wait_reply(correlation_id, timeout \\ 15_000) do
     receive do
       {:reply, ^correlation_id, reply_message} -> {:ok, Poison.decode!(reply_message)}
-      after timeout -> :timeout
+    after
+      timeout -> :timeout
     end
   end
 

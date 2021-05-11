@@ -33,3 +33,5 @@ jobs:
     - name: Publish
       if: github.event_name == 'release'
       run: mix publish
+      env:
+        HEX_API_KEY: ${{ secrets.HEX_API_KEY }}

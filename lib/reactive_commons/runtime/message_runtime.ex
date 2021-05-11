@@ -1,4 +1,7 @@
 defmodule MessageRuntime do
+  @moduledoc """
+    This module initializes and supervises all required processes to enable the reactive commons ecosystem
+  """
   use Supervisor
 
   def start_link(%AsyncConfig{} = conf) do

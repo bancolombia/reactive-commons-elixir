@@ -15,26 +15,53 @@ defmodule DomainEvent do
     :data
   ]
 
+  @doc """
+  Creates a new DomainEvent structure with a generated event_id
 
+  ## Examples
+
+      iex> DomainEvent.new("UserRegistered", %{name: "username", email: "user@example.com", createdAt: "2021-05-11T15:00:47.380Z"})
+      %DomainEvent{
+        data: %{
+          createdAt: "2021-05-11T15:00:47.380Z",
+          email: "user@example.com",
+          name: "username"
+        },
+        eventId: "852e6f59-f920-45e0-bce8-75f1e74647ff",
+        name: "UserRegistered"
+      }
+  """
   def new(name, data) do
     new_p(name, data, NameGenerator.message_id())
   end
 
-  def new(name, data, message_id) do
-    new_p(name, data, message_id)
-  end
+  @doc """
+  Creates a new DomainEvent structure
 
-  defp new_p(nil, _, _), do: raise "Invalid nil values in DomainEvent constructor!"
-  defp new_p(_, nil, _), do: raise "Invalid nil values in DomainEvent constructor!"
-  defp new_p(_, _, nil), do: raise "Invalid nil values in DomainEvent constructor!"
-  defp new_p(name, data, message_id) do
+  ## Examples
+
+      iex> DomainEvent.new("UserRegistered", %{name: "username", email: "user@example.com", createdAt: "2021-05-11T15:00:47.380Z"}, "852e6f59-f920-45e0-bce8-75f1e74647aa")
+      %DomainEvent{
+        data: %{
+          createdAt: "2021-05-11T15:00:47.380Z",
+          email: "user@example.com",
+          name: "username"
+        },
+        eventId: "852e6f59-f920-45e0-bce8-75f1e74647aa",
+        name: "UserRegistered"
+      }
+  """
+  def new(name, data, event_id), do: new_p(name, data, event_id)
+
+  defp new_p(nil, _, _), do: raise "Invalid nil name in DomainEvent constructor!"
+  defp new_p(_, nil, _), do: raise "Invalid nil data in DomainEvent constructor!"
+  defp new_p(_, _, nil), do: raise "Invalid nil event_id in DomainEvent constructor!"
+  defp new_p(name, data, event_id) do
     %__MODULE__{
       name: name,
       data: data,
-      eventId: message_id
+      eventId: event_id
     }
   end
-
-
 
 end

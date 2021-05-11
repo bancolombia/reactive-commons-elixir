@@ -1,4 +1,7 @@
 defmodule MessageContext do
+  @moduledoc """
+    This module maintain the required settings to achieve communication with the message broker, it also provides default semantic settings
+  """
   use GenServer
   require Logger
   @table_name :msg_ctx

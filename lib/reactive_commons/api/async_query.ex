@@ -7,8 +7,23 @@ defmodule AsyncQuery do
 
   defstruct [:resource, :queryData]
 
-  def new(resource, data) do
-    %__MODULE__{resource: resource, queryData: data}
+  @doc """
+  Creates a new AsyncQuery structure
+
+  ## Examples
+
+      iex> AsyncQuery.new("UserInfo", %{name: "username"})
+      %AsyncQuery{queryData: %{name: "username"}, resource: "UserInfo"}
+  """
+  def new(resource, data), do: new_p(resource, data)
+
+  defp new_p(nil, _), do: raise "Invalid nil name in AsyncQuery constructor!"
+  defp new_p(_, nil), do: raise "Invalid nil data in AsyncQuery constructor!"
+  defp new_p(name, data) do
+    %__MODULE__{
+      resource: name,
+      queryData: data
+    }
   end
 
 end

@@ -1,5 +1,7 @@
 defmodule DomainEventBus do
-
+  @moduledoc """
+    This module allows the domain events emission.
+  """
   @domain_events_exchange "domainEvents"
 
   def emit(event = %DomainEvent{name: name}) do
