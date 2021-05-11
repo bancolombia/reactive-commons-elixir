@@ -41,7 +41,7 @@ jobs:
         uses: github-actions-x/commit@v2.8
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          push-branch: feature/version
+          push-branch: main
           commit-message: 'Upgrade version to ${{ env.RELEASE_VERSION }}'
           force-add: "true"
           files: mix.exs
