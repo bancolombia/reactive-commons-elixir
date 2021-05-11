@@ -17,7 +17,7 @@ defmodule RabbitConnection do
     url = Keyword.get(opts, :url)
     name = Keyword.get(opts, :name, "NoName")
     parent_pid = Keyword.get(opts, :parent_pid, nil)
-    send(self(), {:connect, url, intent = 0})
+    send(self(), {:connect, url, _intent = 0})
     {:ok, %__MODULE__{name: name, parent_pid: parent_pid}}
   end
 
@@ -34,7 +34,7 @@ defmodule RabbitConnection do
   end
 
   @impl true
-  def handle_info({:connect, url, intent}, state) when intent < 5 do
+  def handle_info({:connect, url, intent}, state) when intent < @max_intents do
     case Connection.open(url) do
       {:ok, conn} ->
         Process.monitor(conn.pid)

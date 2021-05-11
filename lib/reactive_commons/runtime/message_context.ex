@@ -26,6 +26,8 @@ defmodule MessageContext do
     GenServer.start_link(__MODULE__, config, name: __MODULE__)
   end
 
+
+  @impl
   def init(config = %AsyncConfig{}) do
     config
     |> put_default_values()
