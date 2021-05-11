@@ -17,12 +17,12 @@ defmodule ReactiveCommons.MixProject do
       deps: deps(),
       package: package(),
       description: description(),
-      source_url: "https://github.com/dbuos/reactive_commons"
+      source_url: "https://github.com/bancolombia/reactive_commons"
     ]
   end
 
   defp description() do
-    "Domain driven async abstractions like DomainEventBus, Event subscriptions/emit, Async Command handling and Async Req/Reply."
+    "Domain driven async abstractions like Domain Event Bus, Event subscriptions/emit, Async Command handling and Async Req/Reply."
   end
 
   # Run "mix help compile.app" to learn about applications.
@@ -52,7 +52,8 @@ defmodule ReactiveCommons.MixProject do
       maintainers: ["Daniel Bustamante Ospina"],
       licenses: ["Apache-2.0"],
       links: %{
-        "GitHub" => "https://github.com/dbuos/reactive_commons"
+        "GitHub" => "https://github.com/bancolombia/reactive_commons",
+        "About this initiative" => "https://reactivecommons.org"
       }
     ]
   end

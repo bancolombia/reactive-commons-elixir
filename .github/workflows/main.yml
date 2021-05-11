@@ -32,6 +32,6 @@ jobs:
       run: mix test
     - name: Publish
 #      if: github.event_name == 'release'
-      run: mix hex.publish --yes
+      run: mix hex.publish --replace --yes
       env:
         HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
