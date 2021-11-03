@@ -4,21 +4,22 @@ defmodule EventListener do
 
   @handlers_table_name :event_handlers
 
-  defstruct [:conn, :queue_name, :chan, :consumer_tag]
+  defstruct [:conn, :queue_name, :chan, :consumer_tag, :prefetch_count]
 
   def start_link(_) do
-    GenServer.start_link(__MODULE__, MessageContext.event_queue_name())
+    GenServer.start_link(__MODULE__, {MessageContext.event_queue_name(), MessageContext.prefetch_count()})
   end
 
   @impl true
-  def init(queue) do
+  def init({queue, prefetch_count}) do
     :ok = ConnectionsHolder.get_connection_async(__MODULE__)
-    {:ok, %__MODULE__{queue_name: queue}}
+    {:ok, %__MODULE__{queue_name: queue, prefetch_count: prefetch_count}}
   end
 
   @impl true
-  def handle_info({:connected, conn}, state = %{queue_name: queue_name}) do
+  def handle_info({:connected, conn}, state = %{queue_name: queue_name, prefetch_count: prefetch_count}) do
     {:ok, chan} = AMQP.Channel.open(conn)
+    :ok = AMQP.Basic.qos(chan, prefetch_count: prefetch_count)
     {:ok, consumer_tag} = AMQP.Basic.consume(chan, queue_name)
     {:noreply, %{state | chan: chan, consumer_tag: consumer_tag, conn: conn}}
   end

@@ -5,6 +5,7 @@ defmodule QueryClient.RestController do
   @target "sample-query-server"
   @query_name "GetPerson"
   @command_name "RegisterPerson"
+  @event_name "PersonRegistered"
 
   plug :match
   plug :dispatch
@@ -24,6 +25,14 @@ defmodule QueryClient.RestController do
     conn
     |> put_resp_header("Content-Type", "application/json")
     |> send_resp(200, json(command))
+  end
+
+  get "/event" do
+    event = DomainEvent.new(@event_name, PersonRegistered.new_sample(Person.new_sample()))
+    :ok = DomainEventBus.emit(event)
+    conn
+    |> put_resp_header("Content-Type", "application/json")
+    |> send_resp(200, json(event))
   end
 
   get "/ping" do
@@ -53,5 +62,12 @@ defmodule PersonDataReq do
   defstruct [:doc]
   def new_sample do
     %__MODULE__{doc: "1234"}
+  end
+end
+
+defmodule PersonRegistered do
+  defstruct [:person, :registered_at]
+  def new_sample(person) do
+    %__MODULE__{person: person, registered_at: :os.system_time(:millisecond)}
   end
 end

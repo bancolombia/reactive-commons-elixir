@@ -33,6 +33,8 @@ defmodule QueryServer.SubsConfig do
 
   def person_registered(%{} = event) do
     IO.puts "Handling event #{inspect(event)}"
+    Process.sleep(5000)
+    IO.puts "Handling event ends"
   end
 
 end

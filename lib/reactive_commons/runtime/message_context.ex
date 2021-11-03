@@ -23,6 +23,7 @@ defmodule MessageContext do
     with_dlq_retry: false,
     retry_delay: 500,
     max_retries: 10,
+    prefetch_count: 250,
   }
 
   def start_link(config = %AsyncConfig{}) do
@@ -82,6 +83,7 @@ defmodule MessageContext do
   def with_dlq_retry(), do: config().with_dlq_retry
   def retry_delay(), do: config().retry_delay
   def max_retries(), do: config().max_retries
+  def prefetch_count(), do: config().prefetch_count
   def application_name(), do: config().application_name
 
   def config() do

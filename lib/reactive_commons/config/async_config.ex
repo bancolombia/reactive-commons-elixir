@@ -23,7 +23,8 @@ defmodule AsyncConfig do
     },
     with_dlq_retry: false,
     retry_delay: 500,
-    max_retries: 10
+    max_retries: 10,
+    prefetch_count: 250,
   }
   ```
   """
@@ -42,6 +43,7 @@ defmodule AsyncConfig do
     :with_dlq_retry,
     :retry_delay,
     :max_retries,
+    :prefetch_count,
     extractor_debug: false
   ]
 
