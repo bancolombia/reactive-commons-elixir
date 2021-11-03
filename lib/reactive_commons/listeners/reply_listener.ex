@@ -19,9 +19,11 @@ defmodule ReplyListener do
     queue_name = MessageContext.reply_queue_name()
     exchange_name = MessageContext.reply_exchange_name()
     routing_key = MessageContext.reply_routing_key()
+    prefetch_count = MessageContext.prefetch_count()
     {:ok, _} = AMQP.Queue.declare(chan, queue_name, auto_delete: true, exclusive: true)
     :ok = AMQP.Exchange.declare(chan, exchange_name, :topic, durable: true)
     :ok = AMQP.Queue.bind(chan, queue_name, exchange_name, routing_key: routing_key)
+    :ok = AMQP.Basic.qos(chan, prefetch_count: prefetch_count)
     {:ok, _consumer_tag} = AMQP.Basic.consume(chan, queue_name)
   end
 
@@ -69,7 +71,9 @@ defmodule ReplyListener do
   end
 
   defp get_header_value(%{headers: headers}, name) do
-    headers |> Enum.find(match_header(name)) |> elem(2)
+    headers
+    |> Enum.find(match_header(name))
+    |> elem(2)
   end
 
   defp match_header(name) do
