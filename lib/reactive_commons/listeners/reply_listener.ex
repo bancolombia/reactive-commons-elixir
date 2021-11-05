@@ -1,86 +1,36 @@
 defmodule ReplyListener do
-  use GenServer
-  require Logger
+  use GenericListener
 
-  defstruct [:chan, :conn, :consumer_tag, :conn_pid]
-
-  def start_link(_opts) do
-    GenServer.start_link(__MODULE__, [], name: __MODULE__)
+  @impl true
+  def should_listen() do
+    ListenersValidator.should_listen_replies(MessageContext.config())
   end
 
   @impl true
-  def init(_opts) do
-    IO.puts("###########INITIALIZING#############")
-    :ok = ConnectionsHolder.get_connection_async(__MODULE__)
-    {:ok, %__MODULE__{}}
+  def initial_state() do
+    queue_name = MessageContext.reply_queue_name()
+    prefetch_count = MessageContext.prefetch_count()
+    %{prefetch_count: prefetch_count, queue_name: queue_name}
   end
 
-  defp init_bindings(chan) do
+  @impl true
+  def create_topology(chan) do
+    #Topology
     queue_name = MessageContext.reply_queue_name()
     exchange_name = MessageContext.reply_exchange_name()
     routing_key = MessageContext.reply_routing_key()
-    prefetch_count = MessageContext.prefetch_count()
-    {:ok, _} = AMQP.Queue.declare(chan, queue_name, auto_delete: true, exclusive: true)
+    #Exchange
     :ok = AMQP.Exchange.declare(chan, exchange_name, :topic, durable: true)
+    #Queue
+    {:ok, _} = AMQP.Queue.declare(chan, queue_name, auto_delete: true, exclusive: true)
+    #Bindings
     :ok = AMQP.Queue.bind(chan, queue_name, exchange_name, routing_key: routing_key)
-    :ok = AMQP.Basic.qos(chan, prefetch_count: prefetch_count)
-    {:ok, _consumer_tag} = AMQP.Basic.consume(chan, queue_name)
   end
 
-  @impl true
-  def handle_info({:connected, conn}, state = %{conn_pid: _}) do
-    IO.puts("###########REPLY_LISTENER#############")
-    IO.puts("Started!")
-    {:ok, chan} = AMQP.Channel.open(conn)
-    {:ok, consumer_tag} = init_bindings(chan)
-    {:noreply, %{state | chan: chan, conn: conn, consumer_tag: consumer_tag}}
-  end
-
-  @impl true
-  def handle_info({:basic_consume_ok, %{consumer_tag: consumer_tag}}, state) do
-    Logger.info("Reply consumer registered: #{inspect(consumer_tag)}")
-    {:noreply, %{state | consumer_tag: consumer_tag}}
-  end
-
-  @impl true
-  def handle_info({:basic_cancel, %{consumer_tag: _}}, state) do
-    Logger.error("Reply listener consumer stoped by the broker")
-    {:stop, :normal, state}
-  end
-
-  @impl true
-  def handle_info({:basic_cancel_ok, %{consumer_tag: _}}, state) do
-    Logger.warn("Reply listener consumer cancelled!")
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_info({:basic_deliver, payload, props = %{delivery_tag: _, redelivered: _}}, state = %{chan: chan}) do
-    consume(props, payload, chan)
-    {:noreply, state}
-  end
-
-  defp consume(props, payload, chan) do
+  def consume(props, payload, %{chan: chan}) do
     correlation_id = get_correlation_id(props)
     :ok = AMQP.Basic.ack(chan, props.delivery_tag)
     ReplyRouter.route_reply(correlation_id, payload)
-  end
-
-  defp get_correlation_id(props = %{headers: _headers}) do
-    get_header_value(props, "x-correlation-id")
-  end
-
-  defp get_header_value(%{headers: headers}, name) do
-    headers
-    |> Enum.find(match_header(name))
-    |> elem(2)
-  end
-
-  defp match_header(name) do
-    fn
-      {^name, _, _} -> true
-      _ -> false
-    end
   end
 
 end

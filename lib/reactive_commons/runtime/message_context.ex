@@ -20,6 +20,7 @@ defmodule MessageContext do
       MessageSender: SenderConn,
       ListenerController: SenderConn,
     },
+    queries_reply: true,
     with_dlq_retry: false,
     retry_delay: 500,
     max_retries: 10,
