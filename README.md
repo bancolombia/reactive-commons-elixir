@@ -1,3 +1,4 @@
+[![Scorecards supply-chain security](https://github.com/bancolombia/reactive-commons-elixir/actions/workflows/scorecards-analysis.yml/badge.svg)](https://github.com/bancolombia/reactive-commons-elixir/actions/workflows/scorecards-analysis.yml)
 # ReactiveCommons
 
 [![hex.pm version](https://img.shields.io/hexpm/v/reactive_commons.svg?style=flat)](https://hex.pm/packages/reactive_commons)
