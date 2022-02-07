@@ -1,8 +1,8 @@
-[![Scorecards supply-chain security](https://github.com/bancolombia/reactive-commons-elixir/actions/workflows/scorecards-analysis.yml/badge.svg)](https://github.com/bancolombia/reactive-commons-elixir/actions/workflows/scorecards-analysis.yml)
 # ReactiveCommons
 
 [![hex.pm version](https://img.shields.io/hexpm/v/reactive_commons.svg?style=flat)](https://hex.pm/packages/reactive_commons)
 [![hex.pm downloads](https://img.shields.io/hexpm/dt/reactive_commons.svg?style=flat)](https://hex.pm/packages/reactive_commons)
+[![Scorecards supply-chain security](https://github.com/bancolombia/reactive-commons-elixir/actions/workflows/scorecards-analysis.yml/badge.svg)](https://github.com/bancolombia/reactive-commons-elixir/actions/workflows/scorecards-analysis.yml)
 
 The purpose of `:reactive_commons` is to provide a set of abstractions and implementations over different patterns and
 practices that make the foundation of a reactive microservices' architecture.
