@@ -33,14 +33,9 @@ jobs:
       - name: Run tests with coverage
         run: mix coveralls.xml
       - name: Run static analysis
-        run: mix credo --sonarqube-base-folder "" --sonarqube-file credo_sonarqube.json --mute-exit-status
+        run: mix credo
       - name: Run security analysis
         run: mix sobelow
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       - name: Set release env
         if: github.event_name == 'release'
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
