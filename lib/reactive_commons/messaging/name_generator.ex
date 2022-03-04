@@ -33,8 +33,8 @@ defmodule NameGenerator do
   "sample_app-fb49a0ecd60c4d2092643b4cfe272106"
   ```
   """
-  def generate(prefix) do
-    "#{prefix}-#{
+  def generate(app, prefix) do
+    "#{app}-#{prefix}-#{
       UUID.uuid4()
       |> String.replace("-", "")
     }"

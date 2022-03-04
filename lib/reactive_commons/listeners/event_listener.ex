@@ -2,9 +2,9 @@ defmodule EventListener do
   use GenericListener, handlers_table: :event_handlers, executor: EventExecutor
 
   @impl true
-  def should_listen() do
-    ListenersValidator.should_listen_events(MessageContext.handlers())
-  end
+  def should_listen(), do: ListenersValidator.has_handlers(get_handlers())
+
+  def get_handlers(), do: MessageContext.handlers().event_listeners
 
   @impl true
   def initial_state() do

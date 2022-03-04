@@ -4,6 +4,7 @@ defmodule QueryServer.SubsConfig do
   @query_name "GetPerson"
   @command_name "RegisterPerson"
   @event_name "PersonRegistered"
+  @notification_event_name "ConfigurationChanged"
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
@@ -14,6 +15,7 @@ defmodule QueryServer.SubsConfig do
     HandlerRegistry.serve_query(@query_name, &get_person/1)
     |> HandlerRegistry.handle_command(@command_name, &register_person/1)
     |> HandlerRegistry.listen_event(@event_name, &person_registered/1)
+    |> HandlerRegistry.listen_notification_event(@notification_event_name, &configuration_changed/1)
     |> HandlerRegistry.commit_config()
     {:ok, nil}
   end
@@ -35,6 +37,12 @@ defmodule QueryServer.SubsConfig do
     IO.puts "Handling event #{inspect(event)}"
     Process.sleep(5000)
     IO.puts "Handling event ends"
+  end
+
+  def configuration_changed(%{} = event) do
+    IO.puts "Handling notification event #{inspect(event)}"
+    Process.sleep(5000)
+    IO.puts "Handling notification event ends"
   end
 
 end

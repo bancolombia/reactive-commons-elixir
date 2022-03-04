@@ -2,9 +2,9 @@ defmodule CommandListener do
   use GenericListener, handlers_table: :command_handlers, executor: CommandExecutor
 
   @impl true
-  def should_listen() do
-    ListenersValidator.should_listen_commands(MessageContext.handlers())
-  end
+  def should_listen(), do: ListenersValidator.has_handlers(get_handlers())
+
+  def get_handlers(), do: MessageContext.handlers().command_listeners
 
   @impl true
   def initial_state() do

@@ -2,9 +2,7 @@ defmodule ReplyListener do
   use GenericListener
 
   @impl true
-  def should_listen() do
-    ListenersValidator.should_listen_replies(MessageContext.config())
-  end
+  def should_listen(), do: ListenersValidator.should_listen_replies(MessageContext.config())
 
   @impl true
   def initial_state() do

@@ -22,6 +22,7 @@ defmodule ListenerController do
     MessageContext.save_handlers_config(conf)
     DynamicSupervisor.start_child(ListenerController.Supervisor, QueryListener)
     DynamicSupervisor.start_child(ListenerController.Supervisor, EventListener)
+    DynamicSupervisor.start_child(ListenerController.Supervisor, NotificationEventListener)
     DynamicSupervisor.start_child(ListenerController.Supervisor, CommandListener)
     {:reply, :ok, state}
   end
