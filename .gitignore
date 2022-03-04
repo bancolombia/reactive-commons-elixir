@@ -26,3 +26,5 @@ reactive_commons-*.tar
 
 *.iml
 log
+credo_sonarqube.json
+generic_test_execution_sonarqube.xml

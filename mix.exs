@@ -13,6 +13,16 @@ defmodule ReactiveCommons.MixProject do
         main: "readme",
         source_ref: "v#{@version}"
       ],
+      test_coverage: [
+        tool: ExCoveralls
+      ],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test,
+        "coveralls.xml": :test
+      ],
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
@@ -41,7 +51,12 @@ defmodule ReactiveCommons.MixProject do
       {:uuid, "~> 1.1"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:telemetry, "~> 0.4.2"},
-      {:mock, "~> 0.3.0", only: :test}
+      # test dependencies
+      {:mock, "~> 0.3.0", only: :test},
+      {:excoveralls, "~> 0.14", only: :test},
+      {:ex_unit_sonarqube, "~> 0.1", only: :test},
+      {:credo_sonarqube, "~> 0.1", only: :dev},
+      {:sobelow, "~> 0.11", only: :dev}
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
     ]
   end
