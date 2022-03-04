@@ -3,6 +3,7 @@ defmodule HandlersConfig do
   defstruct [
     query_listeners: %{},
     event_listeners: %{},
+    notification_event_listeners: %{},
     command_listeners: %{}
   ]
 

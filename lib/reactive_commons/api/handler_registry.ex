@@ -27,6 +27,13 @@ defmodule HandlerRegistry do
       do: conf
           |> Conf.add_listener(:event_listeners, path, handler)
 
+  def listen_notification_event(path, handler),
+      do: Conf.new()
+          |> listen_notification_event(path, handler)
+  def listen_notification_event(conf = %Conf{}, path, handler),
+      do: conf
+          |> Conf.add_listener(:notification_event_listeners, path, handler)
+
   def commit_config(conf = %Conf{}) do
     ListenerController.configure(conf)
   end

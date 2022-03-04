@@ -2,9 +2,9 @@ defmodule QueryListener do
   use GenericListener, handlers_table: :query_handlers, executor: QueryExecutor
 
   @impl true
-  def should_listen() do
-    ListenersValidator.should_listen_queries(MessageContext.handlers())
-  end
+  def should_listen(), do: ListenersValidator.has_handlers(get_handlers())
+
+  def get_handlers(), do: MessageContext.handlers().query_listeners
 
   @impl true
   def initial_state() do
