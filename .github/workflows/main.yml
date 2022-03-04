@@ -33,7 +33,7 @@ jobs:
       - name: Run tests with coverage
         run: mix coveralls.xml
       - name: Run static analysis
-        run: mix credo
+        run: mix credo --mute-exit-status
       - name: Run security analysis
         run: mix sobelow
       - name: Set release env
