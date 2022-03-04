@@ -6,6 +6,7 @@ defmodule QueryClient.RestController do
   @query_name "GetPerson"
   @command_name "RegisterPerson"
   @event_name "PersonRegistered"
+  @notification_event_name "ConfigurationChanged"
 
   plug :match
   plug :dispatch
@@ -29,6 +30,14 @@ defmodule QueryClient.RestController do
 
   get "/event" do
     event = DomainEvent.new(@event_name, PersonRegistered.new_sample(Person.new_sample()))
+    :ok = DomainEventBus.emit(event)
+    conn
+    |> put_resp_header("Content-Type", "application/json")
+    |> send_resp(200, json(event))
+  end
+
+  get "/notification" do
+    event = DomainEvent.new(@notification_event_name, %{settings: "changed"})
     :ok = DomainEventBus.emit(event)
     conn
     |> put_resp_header("Content-Type", "application/json")

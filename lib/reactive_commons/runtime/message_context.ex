@@ -16,10 +16,12 @@ defmodule MessageContext do
       QueryListener: ListenerConn,
       CommandListener: ListenerConn,
       EventListener: ListenerConn,
+      NotificationEventListener: ListenerConn,
       MessageExtractor: ListenerConn,
       MessageSender: SenderConn,
       ListenerController: SenderConn,
     },
+    queries_reply: true,
     with_dlq_retry: false,
     retry_delay: 500,
     max_retries: 10,
@@ -48,9 +50,10 @@ defmodule MessageContext do
     %AsyncConfig{
       config |
       reply_routing_key: NameGenerator.generate(),
-      reply_queue: NameGenerator.generate(app_name),
+      reply_queue: NameGenerator.generate(app_name, "reply"),
       query_queue: "#{app_name}.query",
       event_queue: "#{app_name}.subsEvents",
+      notification_event_queue: NameGenerator.generate(app_name, "notification"),
       command_queue: "#{app_name}",
     }
   end
@@ -76,6 +79,7 @@ defmodule MessageContext do
   def query_queue_name(), do: config().query_queue
   def command_queue_name(), do: config().command_queue
   def event_queue_name(), do: config().event_queue
+  def notification_event_queue_name(), do: config().notification_event_queue
   def reply_routing_key(), do: config().reply_routing_key
   def reply_exchange_name(), do: config().reply_exchange
   def direct_exchange_name(), do: config().direct_exchange
