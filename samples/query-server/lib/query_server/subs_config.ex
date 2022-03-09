@@ -13,9 +13,14 @@ defmodule QueryServer.SubsConfig do
   @impl true
   def init(_) do
     HandlerRegistry.serve_query(@query_name, &get_person/1)
+    |> HandlerRegistry.serve_query(@query_name <> "-2", &get_person/1)
     |> HandlerRegistry.handle_command(@command_name, &register_person/1)
+    |> HandlerRegistry.handle_command(@command_name <> "-2", &register_person/1)
     |> HandlerRegistry.listen_event(@event_name, &person_registered/1)
+#          |> HandlerRegistry.listen_event(@event_name <> "-2", &person_registered/1)
+    |> HandlerRegistry.discard_event(@event_name <> "-2")
     |> HandlerRegistry.listen_notification_event(@notification_event_name, &configuration_changed/1)
+    |> HandlerRegistry.listen_notification_event(@notification_event_name <> "-2", &configuration_changed/1)
     |> HandlerRegistry.commit_config()
     {:ok, nil}
   end

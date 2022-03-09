@@ -34,6 +34,13 @@ defmodule HandlerRegistry do
       do: conf
           |> Conf.add_listener(:notification_event_listeners, path, handler)
 
+  def discard_event(path),
+      do: Conf.new()
+          |> discard_event(path)
+  def discard_event(conf = %Conf{}, path),
+      do: conf
+          |> Conf.remove_listener(path)
+
   def commit_config(conf = %Conf{}) do
     ListenerController.configure(conf)
   end

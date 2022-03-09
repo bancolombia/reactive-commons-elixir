@@ -43,4 +43,6 @@ defmodule CommandListener do
     :ok = AMQP.Queue.bind(chan, command_queue_name, direct_exchange_name, routing_key: command_queue_name)
   end
 
+  def drop_topology(conn), do: delete_queue(conn, MessageContext.command_queue_name())
+
 end
