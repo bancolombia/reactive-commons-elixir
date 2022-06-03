@@ -14,14 +14,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@d171c3b028d844f2bf14e9fdec0c58114451e4bf
       - name: Set up Elixir
         uses: erlef/setup-elixir@885971a72ed1f9240973bd92ab57af8c1aa68f24
         with:
           elixir-version: '1.11.4' # Define the elixir version [required]
           otp-version: '23' # Define the OTP version [required]
       - name: Restore dependencies cache
-        uses: actions/cache@v2
+        uses: actions/cache@661fd3eb7f2f20d8c7c84bc2b0509efd7a826628
         with:
           path: deps
           key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
@@ -38,7 +38,7 @@ jobs:
         run: sed -i 's/@version \".*\"/@version "${{ env.RELEASE_VERSION }}"/g' mix.exs
       - name: Save version
         if: github.event_name == 'release'
-        uses: github-actions-x/commit@v2.8
+        uses: github-actions-x/commit@5cf7985b07155682f82d02b6c2188d90cebeb0c8
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           push-branch: main
