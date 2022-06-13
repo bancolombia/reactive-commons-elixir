@@ -35,7 +35,10 @@ defmodule GenericExecutor do
         try do
           event = decode(msg)
           handler_path = get_handler_path(msg, event)
-          [{_path, handler_fn}] = :ets.lookup(table, handler_path)
+          {:ok, handler_fn} = case :ets.lookup(table, handler_path) do
+            [{_path, handler_fn}] -> {:ok, handler_fn}
+            [] -> when_no_handler(handler_path)
+          end
           handler_result = handler_fn.(event)
           on_post_process(handler_result, msg)
           report_to_telemetry(@message_type, handler_path, calc_duration(t0), :success)
@@ -64,9 +67,11 @@ defmodule GenericExecutor do
         Poison.decode!(payload)
       end
 
+      def when_no_handler(path), do: {:error, :no_handler_for,  @message_type, path}
+
       def on_post_process(_, _), do: :noop
 
-      defoverridable decode: 1, on_post_process: 2
+      defoverridable decode: 1, on_post_process: 2, when_no_handler: 1
 
     end
   end

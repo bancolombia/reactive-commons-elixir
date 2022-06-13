@@ -37,14 +37,15 @@ defmodule GenericListener do
 
       @impl true
       def init([]) do
-        IO.puts("########### STARTING #{@kind} LISTENER #############")
+        Logger.info("########### STARTING #{@kind} LISTENER #############")
         if should_listen() do
           :ok = ConnectionsHolder.get_connection_async(__MODULE__)
           :ok = create_ets(@handlers_table)
           {:ok, struct(__MODULE__, initial_state())}
         else
-          IO.puts("########### #{@kind} LISTENER SKIPPED #############")
-          :ignore
+          Logger.info("########### #{@kind} LISTENER SKIPPED #############")
+          :ok = ConnectionsHolder.get_connection_async(__MODULE__)
+          {:ok, :stop}
         end
       end
 
@@ -54,8 +55,17 @@ defmodule GenericListener do
         :ok = create_topology(chan)
         :ok = AMQP.Basic.qos(chan, prefetch_count: prefetch_count)
         {:ok, consumer_tag} = AMQP.Basic.consume(chan, queue_name)
-        IO.puts("########### #{@kind} LISTENER STARTED #############")
+        Logger.info("########### #{@kind} LISTENER STARTED #############")
         {:noreply, %{state | chan: chan, consumer_tag: consumer_tag, conn: conn}}
+      end
+
+      @impl true
+      def handle_info({:connected, conn}, state = :stop) do
+        {:ok, chan} = AMQP.Channel.open(conn)
+        if drop_topology(chan) == :ok do
+          Logger.info("########### TOPOLOGY DROPPED FOR #{@kind} #############")
+        end
+        {:stop, :normal, state}
       end
 
       def handle_info({:basic_consume_ok, %{consumer_tag: consumer_tag}}, state = %{queue_name: queue}) do
@@ -89,6 +99,8 @@ defmodule GenericListener do
         spawn_link(@executor, :handle_message, [message_to_handle])
       end
 
+      def drop_topology(_conn), do: :noop
+
       def get_handlers(), do: %{}
 
       defp save_handlers(handlers) do
@@ -101,7 +113,7 @@ defmodule GenericListener do
         GenServer.cast(__MODULE__, {:save_handlers, get_handlers()})
       end
 
-      defoverridable consume: 3, get_handlers: 0
+      defoverridable consume: 3, get_handlers: 0, drop_topology: 1
 
     end
   end
@@ -112,6 +124,14 @@ defmodule GenericListener do
       {"x-message-ttl", :signedint, retry_time},
     ]
     {:ok, _} = AMQP.Queue.declare(chan, origin_queue <> ".DLQ", durable: true, arguments: args)
+  end
+
+  def delete_queue(conn, origin_queue) do
+    if MessageContext.with_dlq_retry() do
+      {:ok, _details} = AMQP.Queue.delete(conn, origin_queue <> ".DLQ")
+    end
+    {:ok, _details} = AMQP.Queue.delete(conn, origin_queue)
+    :ok
   end
 
   def get_correlation_id(props = %{headers: _headers}) do

@@ -25,7 +25,7 @@ defmodule MessageRuntime do
       {MessageContext, config},
       {ReplyRouter, []},
       {ConnectionsHolder, []},
-      {ReplyListener, []},
+      Supervisor.child_spec({ReplyListener, []}, restart: :transient),
       {MessageSender, []},
       {ListenerController, []},
     ]

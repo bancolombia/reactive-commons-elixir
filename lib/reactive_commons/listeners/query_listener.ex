@@ -43,4 +43,6 @@ defmodule QueryListener do
     :ok = AMQP.Queue.bind(chan, query_queue_name, direct_exchange_name, routing_key: query_queue_name)
   end
 
+  def drop_topology(conn), do: delete_queue(conn, MessageContext.query_queue_name())
+
 end

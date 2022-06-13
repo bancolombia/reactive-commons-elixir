@@ -44,7 +44,13 @@ defmodule EventListener do
     for {event_name, _handler} <- :ets.tab2list(@handlers_table) do
       :ok = AMQP.Queue.bind(chan, event_queue_name, events_exchange_name, routing_key: event_name)
     end
+    # Remove bindings for explicit discarded events
+    for event_name <- Map.keys(MessageContext.handlers().discarded_events) do
+      :ok = AMQP.Queue.unbind(chan, event_queue_name, events_exchange_name, routing_key: event_name)
+    end
     :ok
   end
+
+  def drop_topology(conn), do: delete_queue(conn, MessageContext.event_queue_name())
 
 end

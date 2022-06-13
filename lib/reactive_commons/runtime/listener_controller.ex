@@ -20,11 +20,13 @@ defmodule ListenerController do
   def handle_call({:configure_handlers, conf = %HandlersConfig{}}, _from, state) do
     Logger.info "Configuring handlers and starting listeners"
     MessageContext.save_handlers_config(conf)
-    DynamicSupervisor.start_child(ListenerController.Supervisor, QueryListener)
-    DynamicSupervisor.start_child(ListenerController.Supervisor, EventListener)
-    DynamicSupervisor.start_child(ListenerController.Supervisor, NotificationEventListener)
-    DynamicSupervisor.start_child(ListenerController.Supervisor, CommandListener)
+    DynamicSupervisor.start_child(ListenerController.Supervisor, transient(QueryListener))
+    DynamicSupervisor.start_child(ListenerController.Supervisor, transient(EventListener))
+    DynamicSupervisor.start_child(ListenerController.Supervisor, transient(NotificationEventListener))
+    DynamicSupervisor.start_child(ListenerController.Supervisor, transient(CommandListener))
     {:reply, :ok, state}
   end
+
+  defp transient(module), do: Supervisor.child_spec({module, []}, restart: :transient)
 
 end
