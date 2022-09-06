@@ -38,7 +38,7 @@ jobs:
         run: sed -i 's/@version \".*\"/@version "${{ env.RELEASE_VERSION }}"/g' mix.exs
       - name: Save version
         if: github.event_name == 'release'
-        uses: github-actions-x/commit@5cf7985b07155682f82d02b6c2188d90cebeb0c8
+        uses: github-actions-x/commit@722d56b8968bf00ced78407bbe2ead81062d8baa
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           push-branch: main
