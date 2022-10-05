@@ -7,7 +7,7 @@ defmodule ReactiveCommons.MixProject do
     [
       app: :reactive_commons,
       version: @version,
-      elixir: "~> 1.10",
+      elixir: "~> 1.13",
       docs: [
         extras: ["README.md"],
         main: "readme",
