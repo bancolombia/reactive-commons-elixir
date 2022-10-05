@@ -18,8 +18,8 @@ jobs:
       - name: Set up Elixir
         uses: erlef/setup-elixir@885971a72ed1f9240973bd92ab57af8c1aa68f24
         with:
-          elixir-version: '1.11.4' # Define the elixir version [required]
-          otp-version: '23' # Define the OTP version [required]
+          elixir-version: '1.13.4' # Define the elixir version [required]
+          otp-version: '24' # Define the OTP version [required]
       - name: Restore dependencies cache
         uses: actions/cache@661fd3eb7f2f20d8c7c84bc2b0509efd7a826628
         with:
