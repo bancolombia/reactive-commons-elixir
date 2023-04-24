@@ -17,7 +17,7 @@ defmodule ReactiveCommons.MixProject do
       deps: deps(),
       package: package(),
       description: description(),
-      source_url: "https://github.com/bancolombia/reactive_commons"
+      source_url: "https://github.com/bancolombia/reactive-commons-elixir"
     ]
   end
 
@@ -52,7 +52,7 @@ defmodule ReactiveCommons.MixProject do
       maintainers: ["Daniel Bustamante Ospina"],
       licenses: ["Apache-2.0"],
       links: %{
-        "GitHub" => "https://github.com/bancolombia/reactive_commons",
+        "GitHub" => "https://github.com/bancolombia/reactive-commons-elixir",
         "About this initiative" => "https://reactivecommons.org"
       }
     ]

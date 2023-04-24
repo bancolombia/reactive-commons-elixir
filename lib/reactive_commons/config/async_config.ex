@@ -11,7 +11,7 @@ defmodule AsyncConfig do
     reply_exchange: "globalReply",
     direct_exchange: "directMessages",
     events_exchange: "domainEvents",
-    connection_props: "amqp://guest:guest@localhost",
+    connection_props: "amqp://guest:guest@localhost", this value is passed as uri_or_options in https://hexdocs.pm/amqp/AMQP.Connection.html#open/1
     connection_assignation: %{
       ReplyListener: ListenerConn,
       QueryListener: ListenerConn,
