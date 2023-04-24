@@ -70,12 +70,12 @@ defmodule RabbitConnection do
       host: host,
       port: port
     } = URI.parse(connection_props)
-    "host:#{host}\nport#{port}"
+    "host: #{host}\nport: #{port}"
   end
 
   defp log_securely(connection_props) when is_list(connection_props) do
     Key
-    "host:#{Keyword.get(connection_props, :host)}\nport#{Keyword.get(connection_props, :port)}"
+    "host: #{Keyword.get(connection_props, :host)}\nport: #{Keyword.get(connection_props, :port)}"
   end
 
 end
