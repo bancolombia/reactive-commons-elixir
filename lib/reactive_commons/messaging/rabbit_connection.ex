@@ -14,10 +14,10 @@ defmodule RabbitConnection do
 
   @impl true
   def init(opts) do
-    url = Keyword.get(opts, :url)
+    connection_props = Keyword.get(opts, :connection_props)
     name = Keyword.get(opts, :name, "NoName")
     parent_pid = Keyword.get(opts, :parent_pid, nil)
-    send(self(), {:connect, url, _intent = 0})
+    send(self(), {:connect, connection_props, _intent = 0})
     {:ok, %__MODULE__{name: name, parent_pid: parent_pid}}
   end
 
@@ -34,23 +34,23 @@ defmodule RabbitConnection do
   end
 
   @impl true
-  def handle_info({:connect, url, intent}, state) when intent < @max_intents do
-    case Connection.open(url) do
+  def handle_info({:connect, connection_props, intent}, state) when intent < @max_intents do
+    case Connection.open(connection_props) do
       {:ok, conn} ->
         Process.monitor(conn.pid)
         notify_connection(state, conn)
         {:noreply, %{state | connection: conn}}
 
       {:error, _} ->
-        Logger.error("Failed to connect #{url}. Reconnecting later, intent: #{intent}...")
-        Process.send_after(self(), {:connect, url, intent + 1}, @reconnect_interval)
+        Logger.error("Failed to connect #{log_securely(connection_props)}. Reconnecting later, intent: #{intent}...")
+        Process.send_after(self(), {:connect, connection_props, intent + 1}, @reconnect_interval)
         {:noreply, state}
     end
   end
 
   @impl true
-  def handle_info({:connect, url, _}, state) do
-    Logger.error("Failed to connect #{url}. Max retries reached!. Terminating!")
+  def handle_info({:connect, connection_props, _}, state) do
+    Logger.error("Failed to connect #{log_securely(connection_props)}. Max retries reached!. Terminating!")
     {:stop, :max_reconnect_failed, state}
   end
 
@@ -63,6 +63,19 @@ defmodule RabbitConnection do
   defp notify_connection(%{parent_pid: nil}, _conn), do: :ok
   defp notify_connection(%{parent_pid: parent_pid, name: name}, conn) do
     send(parent_pid, {:connected, name, conn})
+  end
+
+  defp log_securely(connection_props) when is_binary(connection_props) do
+    %URI{
+      host: host,
+      port: port
+    } = URI.parse(connection_props)
+    "host:#{host}\nport#{port}"
+  end
+
+  defp log_securely(connection_props) when is_list(connection_props) do
+    Key
+    "host:#{Keyword.get(connection_props, :host)}\nport#{Keyword.get(connection_props, :port)}"
   end
 
 end
