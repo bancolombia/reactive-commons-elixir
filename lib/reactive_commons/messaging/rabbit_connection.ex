@@ -41,8 +41,9 @@ defmodule RabbitConnection do
         notify_connection(state, conn)
         {:noreply, %{state | connection: conn}}
 
-      {:error, _} ->
+      {:error, reason} ->
         Logger.error("Failed to connect #{log_securely(connection_props)}. Reconnecting later, intent: #{intent}...")
+        Logger.error("Reason #{inspect(reason)}")
         Process.send_after(self(), {:connect, connection_props, intent + 1}, @reconnect_interval)
         {:noreply, state}
     end
