@@ -35,6 +35,7 @@ defmodule MessageContext do
 
   @impl
   def init(config = %AsyncConfig{}) do
+    Logger.info "Starting message context"
     config
     |> put_default_values()
     |> put_route_info()
@@ -94,6 +95,8 @@ defmodule MessageContext do
     [{:conf, config}] = :ets.lookup(@table_name, :conf)
     config
   end
+
+  def handlers_configured?(), do: handlers() != []
 
   def handlers() do
     case :ets.lookup(@table_name, :handlers) do

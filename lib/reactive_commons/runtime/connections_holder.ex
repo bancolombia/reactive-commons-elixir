@@ -1,5 +1,6 @@
 defmodule ConnectionsHolder do
   use GenServer
+  require Logger
 
   defstruct [:connection_props, :connections, :connection_assignation]
 
@@ -9,6 +10,7 @@ defmodule ConnectionsHolder do
 
   @impl true
   def init(_) do
+    Logger.info "ConnectionsHolder: init"
     connection_props = MessageContext.config.connection_props
     connection_assignation = MessageContext.config.connection_assignation
     send(self(), :init_connections)
