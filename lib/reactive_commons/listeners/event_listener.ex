@@ -14,7 +14,7 @@ defmodule EventListener do
   end
 
   @impl true
-  def create_topology(chan) do
+  def create_topology(chan, state) do
     #Topology
     event_queue_name = MessageContext.event_queue_name()
     events_exchange_name = MessageContext.events_exchange_name()
@@ -44,7 +44,7 @@ defmodule EventListener do
     for {event_name, _handler} <- :ets.tab2list(@handlers_table) do
       :ok = AMQP.Queue.bind(chan, event_queue_name, events_exchange_name, routing_key: event_name)
     end
-    :ok
+    {:ok, state}
   end
 
 end

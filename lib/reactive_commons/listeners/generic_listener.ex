@@ -16,7 +16,7 @@ defmodule GenericListener do
   @doc """
   Create resource topology.
   """
-  @callback create_topology(AMQP.Channel.t()) :: atom()
+  @callback create_topology(AMQP.Channel.t(), map()) :: atom()
 
   defmacro __using__(opts) do
     quote do
@@ -48,14 +48,22 @@ defmodule GenericListener do
         end
       end
 
+
+
+  def handle_cast(:sample, state) do # TODO: remove this method
+  :ok = ConnectionsHolder.get_connection_async(__MODULE__)
+  {:noreply, state}
+end
+
       @impl true
-      def handle_info({:connected, conn}, state = %{queue_name: queue_name, prefetch_count: prefetch_count}) do
+      def handle_info({:connected, conn}, state) do
         {:ok, chan} = AMQP.Channel.open(conn)
-        :ok = create_topology(chan)
+        {:ok, new_state} = create_topology(chan, state)
+        %{queue_name: queue_name, prefetch_count: prefetch_count} = new_state
         :ok = AMQP.Basic.qos(chan, prefetch_count: prefetch_count)
         {:ok, consumer_tag} = AMQP.Basic.consume(chan, queue_name)
-        IO.puts("########### #{@kind} LISTENER STARTED #############")
-        {:noreply, %{state | chan: chan, consumer_tag: consumer_tag, conn: conn}}
+        IO.puts("########### #{@kind} LISTENER STARTED for #{queue_name} #############")
+        {:noreply, %{new_state | chan: chan, consumer_tag: consumer_tag, conn: conn}}
       end
 
       def handle_info({:basic_consume_ok, %{consumer_tag: consumer_tag}}, state = %{queue_name: queue}) do
@@ -90,6 +98,15 @@ defmodule GenericListener do
       end
 
       def get_handlers(), do: %{}
+
+      defp stop_and_delete(_state = %{queue_name: nil}), do: :ok
+      defp stop_and_delete(_state = %{consumer_tag: nil}), do: :ok
+      defp stop_and_delete(%{chan: chan, queue_name: queue_name, consumer_tag: tag}) do
+        AMQP.Basic.cancel(chan, tag)
+        AMQP.Queue.delete(chan, queue_name)
+
+        Logger.info("Stopped and deleted queue #{queue_name}")
+      end
 
       defp save_handlers(handlers) do
         Enum.each(handlers, fn {path, handler_fn} -> :ets.insert(@handlers_table, {path, handler_fn}) end)
@@ -132,4 +149,3 @@ defmodule GenericListener do
   end
 
 end
-

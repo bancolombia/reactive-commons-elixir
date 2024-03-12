@@ -1,7 +1,7 @@
 defmodule ReactiveCommons.MixProject do
   use Mix.Project
 
-  @version "0.8.4"
+  @version "0.8.5"
 
   def project do
     [
@@ -37,7 +37,7 @@ defmodule ReactiveCommons.MixProject do
     [
       # {:dep_from_hexpm, "~> 0.3.0"},
       {:poison, "~> 5.0"},
-      {:amqp, "~> 3.2"},
+      {:amqp, "~> 3.3"},
       {:uuid, "~> 1.1"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:telemetry, "~> 1.2"},

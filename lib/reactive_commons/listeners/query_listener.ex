@@ -14,7 +14,7 @@ defmodule QueryListener do
   end
 
   @impl true
-  def create_topology(chan) do
+  def create_topology(chan, state) do
     #Topology
     direct_exchange_name = MessageContext.direct_exchange_name()
     query_queue_name = MessageContext.query_queue_name()
@@ -41,6 +41,7 @@ defmodule QueryListener do
     end
     #Bindings
     :ok = AMQP.Queue.bind(chan, query_queue_name, direct_exchange_name, routing_key: query_queue_name)
+    {:ok, state}
   end
 
 end

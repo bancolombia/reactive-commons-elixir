@@ -33,7 +33,7 @@ defmodule MessageContext do
   end
 
 
-  @impl
+  @impl true
   def init(config = %AsyncConfig{}) do
     Logger.info "Starting message context"
     config
@@ -77,10 +77,12 @@ defmodule MessageContext do
   end
 
   def reply_queue_name(), do: config().reply_queue
+  def gen_reply_queue_name(), do: GenServer.call(__MODULE__, {:generate_and_save, "reply"})
   def query_queue_name(), do: config().query_queue
   def command_queue_name(), do: config().command_queue
   def event_queue_name(), do: config().event_queue
   def notification_event_queue_name(), do: config().notification_event_queue
+  def gen_notification_event_queue_name(), do: GenServer.call(__MODULE__, {:generate_and_save, "notification"})
   def reply_routing_key(), do: config().reply_routing_key
   def reply_exchange_name(), do: config().reply_exchange
   def direct_exchange_name(), do: config().direct_exchange
@@ -110,6 +112,18 @@ defmodule MessageContext do
     Logger.info "Saving handlers config!"
     true = :ets.insert(@table_name, {:handlers, config})
     {:reply, :ok, state}
+  end
+
+  def handle_call({:generate_and_save, type}, _from, state) do
+    cfg = %AsyncConfig{application_name: app_name} = config()
+    generated = NameGenerator.generate(app_name, type)
+    attr = case(type) do
+      "reply" -> :reply_queue
+      "notification" -> :notification_event_queue
+    end
+    cfg = Map.put(cfg, attr, generated)
+    :ets.insert(@table_name, {:conf, cfg})
+    {:reply, generated, state}
   end
 
   def table() do
