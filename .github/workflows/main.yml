@@ -27,7 +27,6 @@ jobs:
         if: github.ref == 'refs/heads/master' # especificar rama principal
         uses: actions/setup-node@v4
         with:
-          version-type: strict
           node-version-file: '.nvmrc'
       - name: Set up Semantic Release
         if: github.ref == 'refs/heads/master' # especificar rama principal
@@ -39,9 +38,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.RELEASE_P_A_TOKEN }} # debe crear un Personal Access Token
       # Elixir
       - name: Set up Elixir
-        uses: erlef/setup-beam@v1
+        uses: erlef/setup-beam@v1.17.1
         with:
-          version-file: .tool-versions
+          version-type: strict
+          version-file: ".tool-versions"
       - name: Restore dependencies cache
         uses: actions/cache@v3
         with:
