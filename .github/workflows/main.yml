@@ -27,6 +27,7 @@ jobs:
         if: github.ref == 'refs/heads/master' # especificar rama principal
         uses: actions/setup-node@v4
         with:
+          version-type: strict
           node-version-file: '.nvmrc'
       - name: Set up Semantic Release
         if: github.ref == 'refs/heads/master' # especificar rama principal
