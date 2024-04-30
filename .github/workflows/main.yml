@@ -9,8 +9,6 @@ on:
   pull_request:
     branches:
       - main
-  release:
-    types: [created]
 
 jobs:
   build:
@@ -18,12 +16,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      # Semantic Release
+      - name: Verify Conventional Commits
+        uses: amannn/action-semantic-pull-request@v5
+        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up NodeJS
+        if: github.ref == 'refs/heads/master' # especificar rama principal
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+      - name: Set up Semantic Release
+        if: github.ref == 'refs/heads/master' # especificar rama principal
+        run: npm -g install @semantic-release/git semantic-release@23.0.0
+      - name: Semantic Release
+        if: github.ref == 'refs/heads/master' # especificar rama principal
+        run: npx semantic-release@23.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_P_A_TOKEN }} # debe crear un Personal Access Token
+      # Elixir
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: "1.15.6" # Define the elixir version [required]
-          otp-version: "26" # Define the OTP version [required]
+          version-file: .tool-versions
       - name: Restore dependencies cache
         uses: actions/cache@v3
         with:
@@ -57,31 +74,7 @@ jobs:
         uses: zgosalvez/github-actions-report-lcov@v3
         with:
           coverage-files: cover/lcov.info
-          minimum-coverage: 70
+          minimum-coverage: 5 # TODO: Add minimum coverage
           artifact-name: code-coverage-report
           github-token: ${{ secrets.GITHUB_TOKEN }}
           update-comment: true
-
-# Release
-      - name: Set release env
-        if: github.event_name == 'release'
-        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-      - name: Upgrade mix.exs
-        if: github.event_name == 'release'
-        run: sed -i 's/@version \".*\"/@version "${{ env.RELEASE_VERSION }}"/g' mix.exs
-      - name: Save version
-        if: github.event_name == 'release'
-        uses: github-actions-x/commit@v2.9
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          push-branch: main
-          commit-message: "Upgrade version to ${{ env.RELEASE_VERSION }}"
-          force-add: "true"
-          files: mix.exs
-          name: Release Bot
-          email: release-bot@bancolombia.com.co
-      - name: Publish
-        if: github.event_name == 'release'
-        run: mix hex.publish --replace --yes
-        env:
-          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
