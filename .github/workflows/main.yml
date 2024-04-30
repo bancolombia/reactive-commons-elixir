@@ -24,15 +24,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up NodeJS
-        if: github.ref == 'refs/heads/master' # especificar rama principal
+        if: github.ref == 'refs/heads/main'
         uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
       - name: Set up Semantic Release
-        if: github.ref == 'refs/heads/master' # especificar rama principal
+        if: github.ref == 'refs/heads/main'
         run: npm -g install @semantic-release/git semantic-release@23.0.0
       - name: Semantic Release
-        if: github.ref == 'refs/heads/master' # especificar rama principal
+        if: github.ref == 'refs/heads/main'
         run: npx semantic-release@23.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_P_A_TOKEN }} # debe crear un Personal Access Token
