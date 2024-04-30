@@ -2,11 +2,15 @@ name: Reactive Commons CI/RM
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - feature/*
+      - fix/*
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
   release:
-    types: [ created ]
+    types: [created]
 
 jobs:
   build:
@@ -18,8 +22,8 @@ jobs:
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: '1.14.3' # Define the elixir version [required]
-          otp-version: '25' # Define the OTP version [required]
+          elixir-version: "1.15.6" # Define the elixir version [required]
+          otp-version: "26" # Define the OTP version [required]
       - name: Restore dependencies cache
         uses: actions/cache@v3
         with:
@@ -27,9 +31,38 @@ jobs:
           key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
           restore-keys: ${{ runner.os }}-mix-
       - name: Install dependencies
-        run: mix deps.get
-      - name: Run tests
-        run: mix test
+        run: mix deps.get && mix deps.compile
+        env:
+          MIX_ENV: test
+          SKIP_GIT_HOOKS: 'true'
+      - name: Static code analysis
+        run: mix format --check-formatted && mix sobelow && mix credo --strict && mix dialyzer
+      - name: Tests & Coverage (main)
+        if: github.ref == 'refs/heads/main'
+        run: mix coveralls.github
+        env:
+          CI_ENV: 'true'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Tests & Coverage (pull requests)
+        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+        run: mix coveralls.lcov
+        env:
+          CI_ENV: 'true'
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup PR Report tool
+        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+        uses: hrishikesh-kadam/setup-lcov@v1
+      - name: Validate code coverage
+        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+        uses: zgosalvez/github-actions-report-lcov@v3
+        with:
+          coverage-files: cover/lcov.info
+          minimum-coverage: 70
+          artifact-name: code-coverage-report
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          update-comment: true
+
+# Release
       - name: Set release env
         if: github.event_name == 'release'
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
@@ -42,7 +75,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           push-branch: main
-          commit-message: 'Upgrade version to ${{ env.RELEASE_VERSION }}'
+          commit-message: "Upgrade version to ${{ env.RELEASE_VERSION }}"
           force-add: "true"
           files: mix.exs
           name: Release Bot

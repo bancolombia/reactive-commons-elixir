@@ -1,4 +1,5 @@
 defmodule ReplyRouter do
+  @moduledoc false
   use GenServer
 
   @table_name :reply_registry
@@ -26,7 +27,9 @@ defmodule ReplyRouter do
         send(pid, {:reply, correlation_id, reply_message})
         delete_reply_route(correlation_id)
         :ok
-      [] -> :no_route
+
+      [] ->
+        :no_route
     end
   end
 
@@ -39,5 +42,4 @@ defmodule ReplyRouter do
     :ets.delete(@table_name, correlation_id)
     {:noreply, nil}
   end
-
 end

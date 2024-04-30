@@ -1,12 +1,17 @@
 defmodule DiscardNotifier do
+  @moduledoc false
   require Logger
 
   def notify(%MessageToHandle{payload: payload}) do
     message = Poison.decode(payload)
     event = create_event(message, payload)
+
     case DomainEventBus.emit(event) do
-      :ok -> :ok
-      error -> Logger.error("FATAL!! unable to notify Discard of message!! #{inspect({event, error})}")
+      :ok ->
+        :ok
+
+      error ->
+        Logger.error("FATAL!! unable to notify Discard of message!! #{inspect({event, error})}")
     end
   end
 
@@ -26,5 +31,4 @@ defmodule DiscardNotifier do
     Logger.error("Unable to interpret discarded message #{inspect(decode_result)}")
     DomainEvent.new("corruptData.dlq", original_payload, "corruptData")
   end
-  
 end

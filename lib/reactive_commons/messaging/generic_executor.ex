@@ -12,12 +12,12 @@ defmodule GenericExecutor do
   @doc """
   Extract handler function path (name) from the message.
   """
-  @callback get_handler_path(MessageToHandle.t, parsed_payload()) :: String.t
+  @callback get_handler_path(MessageToHandle.t(), parsed_payload()) :: String.t()
 
   @doc """
   Decode message payload from MessageToHandle.
   """
-  @callback decode(MessageToHandle.t) :: parsed_payload()
+  @callback decode(MessageToHandle.t()) :: parsed_payload()
 
   @doc """
   It's called when handler return (optional).
@@ -30,8 +30,11 @@ defmodule GenericExecutor do
       @behaviour unquote(__MODULE__)
       @message_type unquote(opts[:type])
 
-      def handle_message(msg = %MessageToHandle{delivery_tag: tag, chan: chan, handlers_ref: table}) do
+      def handle_message(
+            msg = %MessageToHandle{delivery_tag: tag, chan: chan, handlers_ref: table}
+          ) do
         t0 = :erlang.monotonic_time()
+
         try do
           event = decode(msg)
           handler_path = get_handler_path(msg, event)
@@ -51,11 +54,13 @@ defmodule GenericExecutor do
 
       defp report_error_to_telemetry(msg, duration) do
         spawn(fn ->
-          handler_path = try do
-            get_handler_path(msg, decode(msg))
-          catch
-            _type, _err -> :erlang.atom_to_binary(@message_type) <> ".unknown"
-          end
+          handler_path =
+            try do
+              get_handler_path(msg, decode(msg))
+            catch
+              _type, _err -> :erlang.atom_to_binary(@message_type) <> ".unknown"
+            end
+
           report_to_telemetry(@message_type, handler_path, duration, :failure)
         end)
       end
@@ -67,7 +72,6 @@ defmodule GenericExecutor do
       def on_post_process(_, _), do: :noop
 
       defoverridable decode: 1, on_post_process: 2
-
     end
   end
 
@@ -75,11 +79,21 @@ defmodule GenericExecutor do
   @dlq_message "ATTENTION!! Sending message to Retry DLQ"
   @fast_retry_message "ATTENTION!! Fast retry message to same Queue"
 
-  def requeue_or_ack(msg = %MessageToHandle{headers: headers, chan: chan, delivery_tag: tag, redelivered: redelivered}, error_info, msg_type) do
+  def requeue_or_ack(
+        msg = %MessageToHandle{
+          headers: headers,
+          chan: chan,
+          delivery_tag: tag,
+          redelivered: redelivered
+        },
+        error_info,
+        msg_type
+      ) do
     num = HeaderExtractor.get_x_death_count(headers)
     is_redelivered = redelivered || num > 0
     send_error_to_custom_reporter(msg, msg_type, error_info, is_redelivered)
-    if is_redelivered && MessageContext.with_dlq_retry do
+
+    if is_redelivered && MessageContext.with_dlq_retry() do
       if num >= MessageContext.max_retries() do
         log_error(msg, error_info, :definitive_discard)
         DiscardNotifier.notify(msg)
@@ -103,13 +117,16 @@ defmodule GenericExecutor do
     )
   end
 
-
-  def report_to_telemetry(type, handler_path, duration, result) when result in [:success, :failure] do
+  def report_to_telemetry(type, handler_path, duration, result)
+      when result in [:success, :failure] do
     type_str = :erlang.atom_to_binary(type)
     transaction = "#{type_str}.#{handler_path}"
-    :telemetry.execute([:async, :message, :completed],
+
+    :telemetry.execute(
+      [:async, :message, :completed],
       %{duration: duration},
-      %{transaction: transaction, result: :erlang.atom_to_binary(result)})
+      %{transaction: transaction, result: :erlang.atom_to_binary(result)}
+    )
   end
 
   def calc_duration(t0) do
@@ -120,13 +137,11 @@ defmodule GenericExecutor do
   defp log_error(msg, {info, error, _, stacktrace}, type) do
     Logger.error("Error while processing message #{inspect(info)}: #{inspect(error)}")
     Logger.error(Exception.format(info, error, stacktrace))
-    Logger.warn("Message info: #{inspect(msg)}")
+    Logger.warning("Message info: #{inspect(msg)}")
     type_message(type)
   end
 
-  defp type_message(:definitive_discard), do: Logger.warn(@discard_message)
-  defp type_message(:retry_dlq), do: Logger.warn(@dlq_message)
-  defp type_message(:fast_retry), do: Logger.warn(@fast_retry_message)
-
+  defp type_message(:definitive_discard), do: Logger.warning(@discard_message)
+  defp type_message(:retry_dlq), do: Logger.warning(@dlq_message)
+  defp type_message(:fast_retry), do: Logger.warning(@fast_retry_message)
 end
-

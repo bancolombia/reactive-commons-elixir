@@ -1,4 +1,5 @@
 defmodule RabbitConnection do
+  @moduledoc false
   use GenServer
   require Logger
   alias AMQP.Connection
@@ -42,7 +43,10 @@ defmodule RabbitConnection do
         {:noreply, %{state | connection: conn}}
 
       {:error, reason} ->
-        Logger.error("Failed to connect #{log_securely(connection_props)}. Reconnecting later, intent: #{intent}...")
+        Logger.error(
+          "Failed to connect #{log_securely(connection_props)}. Reconnecting later, intent: #{intent}..."
+        )
+
         Logger.error("Reason #{inspect(reason)}")
         Process.send_after(self(), {:connect, connection_props, intent + 1}, @reconnect_interval)
         {:noreply, state}
@@ -51,7 +55,10 @@ defmodule RabbitConnection do
 
   @impl true
   def handle_info({:connect, connection_props, _}, state) do
-    Logger.error("Failed to connect #{log_securely(connection_props)}. Max retries reached!. Terminating!")
+    Logger.error(
+      "Failed to connect #{log_securely(connection_props)}. Max retries reached!. Terminating!"
+    )
+
     {:stop, :max_reconnect_failed, state}
   end
 
@@ -62,6 +69,7 @@ defmodule RabbitConnection do
   end
 
   defp notify_connection(%{parent_pid: nil}, _conn), do: :ok
+
   defp notify_connection(%{parent_pid: parent_pid, name: name}, conn) do
     send(parent_pid, {:connected, name, conn})
   end
@@ -71,6 +79,7 @@ defmodule RabbitConnection do
       host: host,
       port: port
     } = URI.parse(connection_props)
+
     "host: #{host}\nport: #{port}"
   end
 
@@ -78,5 +87,4 @@ defmodule RabbitConnection do
     Key
     "host: #{Keyword.get(connection_props, :host)}\nport: #{Keyword.get(connection_props, :port)}"
   end
-
 end

@@ -1,11 +1,12 @@
 defmodule ReplyListener do
+  @moduledoc false
   use GenericListener
 
   @impl true
-  def should_listen(), do: ListenersValidator.should_listen_replies(MessageContext.config())
+  def should_listen, do: ListenersValidator.should_listen_replies(MessageContext.config())
 
   @impl true
-  def initial_state() do
+  def initial_state do
     %{prefetch_count: MessageContext.prefetch_count()}
   end
 
