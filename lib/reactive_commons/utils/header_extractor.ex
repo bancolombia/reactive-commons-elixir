@@ -1,9 +1,9 @@
 defmodule HeaderExtractor do
-
+  @moduledoc false
   def get_x_death_count(headers) do
-    case get_header_value(headers, MessageHeaders.h_X_DEATH()) do
+    case get_header_value(headers, MessageHeaders.h_x_death()) do
       nil -> 0
-      [ {_, sub_h} | _] -> get_header_value(sub_h, MessageHeaders.h_X_DEATH_COUNT(), 0)
+      [{_, sub_h} | _] -> get_header_value(sub_h, MessageHeaders.h_x_death_count(), 0)
     end
   end
 
@@ -20,5 +20,4 @@ defmodule HeaderExtractor do
       _ -> false
     end
   end
-
 end

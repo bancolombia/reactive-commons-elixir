@@ -57,5 +57,4 @@ defmodule AsyncConfig do
   def new(app_name) do
     %__MODULE__{application_name: app_name}
   end
-
 end

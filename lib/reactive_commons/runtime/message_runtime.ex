@@ -4,18 +4,18 @@ defmodule MessageRuntime do
   """
   use Supervisor
 
-  def start_link(%AsyncConfig{} = conf) do
+  def start_link(conf = %AsyncConfig{}) do
     Supervisor.start_link(__MODULE__, conf, name: __MODULE__)
   end
-
 
   @impl true
   def init(config = %{extractor_debug: true}) do
     children = [
       {MessageContext, config},
       {ConnectionsHolder, []},
-      {MessageExtractor, []},
+      {MessageExtractor, []}
     ]
+
     Supervisor.init(children, strategy: :one_for_one)
   end
 
@@ -27,9 +27,9 @@ defmodule MessageRuntime do
       {ConnectionsHolder, []},
       {ReplyListener, []},
       {MessageSender, []},
-      {ListenerController, []},
+      {ListenerController, []}
     ]
+
     Supervisor.init(children, strategy: :rest_for_one)
   end
-
 end

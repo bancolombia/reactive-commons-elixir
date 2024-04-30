@@ -36,9 +36,10 @@ defmodule Command do
   """
   def new(name, data, command_id), do: new_p(name, data, command_id)
 
-  defp new_p(nil, _, _), do: raise "Invalid nil name in Command constructor!"
-  defp new_p(_, nil, _), do: raise "Invalid nil data in Command constructor!"
-  defp new_p(_, _, nil), do: raise "Invalid nil command_id in Command constructor!"
+  defp new_p(nil, _, _), do: raise("Invalid nil name in Command constructor!")
+  defp new_p(_, nil, _), do: raise("Invalid nil data in Command constructor!")
+  defp new_p(_, _, nil), do: raise("Invalid nil command_id in Command constructor!")
+
   defp new_p(name, data, command_id) do
     %__MODULE__{
       name: name,
@@ -46,5 +47,4 @@ defmodule Command do
       commandId: command_id
     }
   end
-
 end

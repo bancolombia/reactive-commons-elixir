@@ -1,4 +1,5 @@
 defmodule MessageSender do
+  @moduledoc false
   use GenServer
   require Logger
 
@@ -15,7 +16,8 @@ defmodule MessageSender do
   end
 
   def send_message(message = %OutMessage{}) do
-    GenServer.call(__MODULE__, message) #TODO: consider process pool usage
+    # TODO: consider process pool usage
+    GenServer.call(__MODULE__, message)
   end
 
   @impl true
@@ -25,7 +27,11 @@ defmodule MessageSender do
   end
 
   @impl true
-  def handle_call(message = %OutMessage{headers: _, content_encoding: _}, _from, state = %{chan: chan}) do
+  def handle_call(
+        message = %OutMessage{headers: _, content_encoding: _},
+        _from,
+        state = %{chan: chan}
+      ) do
     publish(message, chan)
     {:reply, :ok, state}
   end
@@ -41,6 +47,7 @@ defmodule MessageSender do
     if count < 4 do
       Process.send_after(self(), {:retry, message, from, count + 1}, 750)
     end
+
     {:noreply, state}
   end
 
@@ -59,11 +66,9 @@ defmodule MessageSender do
       persistent: message.persistent,
       timestamp: :os.system_time(:millisecond),
       message_id: UUID.uuid4(),
-      app_id: MessageContext.config().application_name,
+      app_id: MessageContext.config().application_name
     ]
+
     AMQP.Basic.publish(chan, message.exchange_name, message.routing_key, message.payload, options)
   end
-
-
 end
-

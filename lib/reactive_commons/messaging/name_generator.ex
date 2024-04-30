@@ -11,7 +11,7 @@ defmodule NameGenerator do
   "fb49a0ecd60c4d2092643b4cfe272106"
   ```
   """
-  def generate() do
+  def generate do
     UUID.uuid4(:hex)
   end
 
@@ -34,10 +34,6 @@ defmodule NameGenerator do
   ```
   """
   def generate(app, prefix) do
-    "#{app}-#{prefix}-#{
-      UUID.uuid4()
-      |> String.replace("-", "")
-    }"
+    "#{app}-#{prefix}-#{UUID.uuid4() |> String.replace("-", "")}"
   end
-
 end

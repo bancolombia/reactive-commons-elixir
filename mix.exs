@@ -1,7 +1,7 @@
 defmodule ReactiveCommons.MixProject do
   use Mix.Project
 
-  @version "0.8.5"
+  @version "0.9.0"
 
   def project do
     [
@@ -14,6 +14,17 @@ defmodule ReactiveCommons.MixProject do
         source_ref: "v#{@version}"
       ],
       start_permanent: Mix.env() == :prod,
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        credo: :test,
+        dialyzer: :test,
+        sobelow: :test,
+        coveralls: :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test,
+        "coveralls.github": :test,
+        "coveralls.lcov": :test
+      ],
       deps: deps(),
       package: package(),
       description: description(),
@@ -35,14 +46,18 @@ defmodule ReactiveCommons.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      # {:dep_from_hexpm, "~> 0.3.0"},
       {:poison, "~> 5.0"},
       {:amqp, "~> 3.3"},
       {:uuid, "~> 1.1"},
-      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:telemetry, "~> 1.2"},
-      {:mock, "~> 0.3", only: :test}
-      # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
+      {:ex_doc, ">= 0.0.0", only: [:dev, :test], runtime: false},
+      # Tests and Analysis
+      {:sobelow, "~> 0.13.0", [only: [:dev, :test]]},
+      {:mock, "~> 0.3.8", [only: [:dev, :test]]},
+      {:excoveralls, "~> 0.18.1", [only: [:dev, :test]]},
+      {:git_hooks, "~> 0.7.3", [only: [:dev, :test], runtime: false]},
+      {:credo, "~> 1.7.5", [only: [:dev, :test], runtime: false]},
+      {:dialyxir, "~> 1.4.3", [only: [:dev, :test], runtime: false]}
     ]
   end
 
@@ -57,5 +72,4 @@ defmodule ReactiveCommons.MixProject do
       }
     ]
   end
-
 end

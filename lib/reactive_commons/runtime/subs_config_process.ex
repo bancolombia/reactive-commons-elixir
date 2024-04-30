@@ -1,4 +1,5 @@
 defmodule SubsConfigProcess do
+  @moduledoc false
   use GenServer
 
   def start_link(config = %HandlersConfig{}) do

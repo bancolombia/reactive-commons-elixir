@@ -53,9 +53,10 @@ defmodule DomainEvent do
   """
   def new(name, data, event_id), do: new_p(name, data, event_id)
 
-  defp new_p(nil, _, _), do: raise "Invalid nil name in DomainEvent constructor!"
-  defp new_p(_, nil, _), do: raise "Invalid nil data in DomainEvent constructor!"
-  defp new_p(_, _, nil), do: raise "Invalid nil event_id in DomainEvent constructor!"
+  defp new_p(nil, _, _), do: raise("Invalid nil name in DomainEvent constructor!")
+  defp new_p(_, nil, _), do: raise("Invalid nil data in DomainEvent constructor!")
+  defp new_p(_, _, nil), do: raise("Invalid nil event_id in DomainEvent constructor!")
+
   defp new_p(name, data, event_id) do
     %__MODULE__{
       name: name,
@@ -63,5 +64,4 @@ defmodule DomainEvent do
       eventId: event_id
     }
   end
-
 end
