@@ -21,6 +21,11 @@ defmodule MessageContext do
       MessageSender: SenderConn,
       ListenerController: SenderConn
     },
+    topology: %{
+      command_sender: false,
+      queries_sender: false,
+      events_sender: false
+    },
     queries_reply: true,
     with_dlq_retry: false,
     retry_delay: 500,
@@ -96,6 +101,7 @@ defmodule MessageContext do
   def max_retries, do: config().max_retries
   def prefetch_count, do: config().prefetch_count
   def application_name, do: config().application_name
+  def topology, do: config().topology
 
   def config do
     [{:conf, config}] = :ets.lookup(@table_name, :conf)

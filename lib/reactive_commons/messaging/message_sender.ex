@@ -39,6 +39,7 @@ defmodule MessageSender do
   @impl true
   def handle_info({:connected, conn}, _state) do
     {:ok, chan} = AMQP.Channel.open(conn)
+    create_topology(chan)
     {:noreply, %__MODULE__{chan: chan, conn: conn}}
   end
 
@@ -70,5 +71,19 @@ defmodule MessageSender do
     ]
 
     AMQP.Basic.publish(chan, message.exchange_name, message.routing_key, message.payload, options)
+  end
+
+  defp create_topology(chan) do
+    opts = MessageContext.topology()
+    # Topology
+    if opts.command_sender || opts.queries_sender do
+      direct_exchange = MessageContext.direct_exchange_name()
+      :ok = AMQP.Exchange.declare(chan, direct_exchange, :direct, durable: true)
+    end
+
+    if opts.events_sender do
+      events_exchange_name = MessageContext.events_exchange_name()
+      :ok = AMQP.Exchange.declare(chan, events_exchange_name, :topic, durable: true)
+    end
   end
 end

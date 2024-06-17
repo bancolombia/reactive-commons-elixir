@@ -2,7 +2,6 @@ defmodule DirectAsyncGateway do
   @moduledoc """
     This module allows the commands emission and async queries requests.
   """
-  @direct_exchange "directMessages"
 
   def request_reply(%AsyncQuery{}, nil), do: raise("nil target")
 
@@ -12,7 +11,7 @@ defmodule DirectAsyncGateway do
     msg =
       OutMessage.new(
         headers: headers(query, correlation_id),
-        exchange_name: @direct_exchange,
+        exchange_name: MessageContext.direct_exchange_name(),
         routing_key: target_name <> ".query",
         payload: Poison.encode!(query)
       )
@@ -50,7 +49,7 @@ defmodule DirectAsyncGateway do
     msg =
       OutMessage.new(
         headers: headers(),
-        exchange_name: @direct_exchange,
+        exchange_name: MessageContext.direct_exchange_name(),
         routing_key: target_name,
         payload: Poison.encode!(command)
       )

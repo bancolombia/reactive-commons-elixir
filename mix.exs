@@ -46,7 +46,7 @@ defmodule ReactiveCommons.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:poison, "~> 5.0"},
+      {:poison, "~> 6.0 or ~> 5.0"},
       {:amqp, "~> 3.3"},
       {:uuid, "~> 1.1"},
       {:telemetry, "~> 1.2"},
