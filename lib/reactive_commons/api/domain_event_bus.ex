@@ -2,13 +2,12 @@ defmodule DomainEventBus do
   @moduledoc """
     This module allows the domain events emission.
   """
-  @domain_events_exchange "domainEvents"
 
   def emit(event = %DomainEvent{name: name}) do
     msg =
       OutMessage.new(
         headers: headers(),
-        exchange_name: @domain_events_exchange,
+        exchange_name: MessageContext.events_exchange_name(),
         routing_key: name,
         payload: Poison.encode!(event)
       )

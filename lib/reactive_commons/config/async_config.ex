@@ -22,6 +22,11 @@ defmodule AsyncConfig do
       MessageSender: SenderConn,
       ListenerController: SenderConn,
     },
+    topology: %{
+      command_sender: false,
+      queries_sender: false,
+      events_sender: false
+    },
     queries_reply: true,
     with_dlq_retry: false,
     retry_delay: 500,
@@ -42,6 +47,7 @@ defmodule AsyncConfig do
     :direct_exchange,
     :reply_routing_key,
     :connection_assignation,
+    :topology,
     :queries_reply,
     :connection_props,
     :with_dlq_retry,
