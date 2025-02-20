@@ -47,9 +47,9 @@ defmodule ReactiveCommons.MixProject do
   defp deps do
     [
       {:poison, "~> 6.0 or ~> 5.0"},
-      {:amqp, "~> 3.3"},
+      {:amqp, "~> 3.3 or ~> 4.0"},
       {:uuid, "~> 1.1"},
-      {:telemetry, "~> 1.2"},
+      {:telemetry, "~> 1.3"},
       {:ex_doc, ">= 0.0.0", only: [:dev, :test], runtime: false},
       # Tests and Analysis
       {:sobelow, "~> 0.13.0", [only: [:dev, :test]]},
