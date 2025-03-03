@@ -30,6 +30,8 @@ defmodule ReplyListener do
   def consume(props, payload, %{chan: chan}) do
     correlation_id = get_correlation_id(props)
     :ok = AMQP.Basic.ack(chan, props.delivery_tag)
-    ReplyRouter.route_reply(correlation_id, payload)
+    result = ReplyRouter.route_reply(correlation_id, payload)
+    :telemetry.execute([:async, :message, :replied], %{}, %{meta: props, result: result})
+    result
   end
 end

@@ -35,13 +35,15 @@ defmodule GenericExecutor do
           ) do
         t0 = :erlang.monotonic_time()
 
+        report_to_telemetry(msg)
+
         try do
           event = decode(msg)
           handler_path = get_handler_path(msg, event)
           [{_path, handler_fn}] = :ets.lookup(table, handler_path)
           handler_result = handler_fn.(event)
           on_post_process(handler_result, msg)
-          report_to_telemetry(@message_type, handler_path, calc_duration(t0), :success)
+          report_to_telemetry(msg, @message_type, handler_path, calc_duration(t0), :success)
           :ok = ack(chan, tag)
         catch
           info, error ->
@@ -61,7 +63,7 @@ defmodule GenericExecutor do
               _type, _err -> :erlang.atom_to_binary(@message_type) <> ".unknown"
             end
 
-          report_to_telemetry(@message_type, handler_path, duration, :failure)
+          report_to_telemetry(msg, @message_type, handler_path, duration, :failure)
         end)
       end
 
@@ -117,7 +119,7 @@ defmodule GenericExecutor do
     )
   end
 
-  def report_to_telemetry(type, handler_path, duration, result)
+  def report_to_telemetry(msg, type, handler_path, duration, result)
       when result in [:success, :failure] do
     type_str = :erlang.atom_to_binary(type)
     transaction = "#{type_str}.#{handler_path}"
@@ -125,8 +127,12 @@ defmodule GenericExecutor do
     :telemetry.execute(
       [:async, :message, :completed],
       %{duration: duration},
-      %{transaction: transaction, result: :erlang.atom_to_binary(result)}
+      %{msg: msg, transaction: transaction, result: :erlang.atom_to_binary(result)}
     )
+  end
+
+  def report_to_telemetry(msg) do
+    :telemetry.execute([:async, :message, :start], %{}, %{msg: msg})
   end
 
   def calc_duration(t0) do

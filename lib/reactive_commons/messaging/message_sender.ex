@@ -1,6 +1,7 @@
 defmodule MessageSender do
   @moduledoc false
   use GenServer
+  alias ReactiveCommons.Utils.SpanUtils
   require Logger
 
   defstruct [:chan, :conn]
@@ -29,10 +30,10 @@ defmodule MessageSender do
   @impl true
   def handle_call(
         message = %OutMessage{headers: _, content_encoding: _},
-        _from,
+        from,
         state = %{chan: chan}
       ) do
-    publish(message, chan)
+    publish(message, chan, from)
     {:reply, :ok, state}
   end
 
@@ -54,14 +55,14 @@ defmodule MessageSender do
 
   @impl true
   def handle_info({:retry, message = %OutMessage{}, from, _count}, state = %{chan: chan}) do
-    publish(message, chan)
+    publish(message, chan, from)
     GenServer.reply(from, :ok)
     {:noreply, state}
   end
 
-  defp publish(message = %OutMessage{headers: headers, content_encoding: encoding}, chan) do
+  defp publish(message = %OutMessage{headers: headers, content_encoding: encoding}, chan, from) do
     options = [
-      headers: headers,
+      headers: SpanUtils.inject(headers, from),
       content_encoding: encoding,
       content_type: message.content_type,
       persistent: message.persistent,
@@ -70,7 +71,38 @@ defmodule MessageSender do
       app_id: MessageContext.config().application_name
     ]
 
-    AMQP.Basic.publish(chan, message.exchange_name, message.routing_key, message.payload, options)
+    result =
+      AMQP.Basic.publish(
+        chan,
+        message.exchange_name,
+        message.routing_key,
+        message.payload,
+        options
+      )
+
+    send_telemetry(
+      System.monotonic_time(),
+      message,
+      options,
+      result,
+      from
+    )
+
+    result
+  end
+
+  defp send_telemetry(start, message = %OutMessage{}, options, result, {caller, _}) do
+    :telemetry.execute(
+      [:async, :message, :sent],
+      %{duration: System.monotonic_time() - start},
+      %{
+        exchange: message.exchange_name,
+        routing_key: message.routing_key,
+        options: options,
+        result: result,
+        caller: caller
+      }
+    )
   end
 
   defp create_topology(chan) do
