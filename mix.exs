@@ -52,12 +52,12 @@ defmodule ReactiveCommons.MixProject do
       {:telemetry, "~> 1.3"},
       {:ex_doc, ">= 0.0.0", only: [:dev, :test], runtime: false},
       # Tests and Analysis
-      {:sobelow, "~> 0.13.0", [only: [:dev, :test]]},
+      {:sobelow, "~> 0.13", [only: [:dev, :test]]},
       {:mock, "~> 0.3.8", [only: [:dev, :test]]},
-      {:excoveralls, "~> 0.18.1", [only: [:dev, :test]]},
+      {:excoveralls, "~> 0.18", [only: [:dev, :test]]},
       {:git_hooks, "~> 0.7.3", [only: [:dev, :test], runtime: false]},
-      {:credo, "~> 1.7.5", [only: [:dev, :test], runtime: false]},
-      {:dialyxir, "~> 1.4.3", [only: [:dev, :test], runtime: false]}
+      {:credo, "~> 1.7", [only: [:dev, :test], runtime: false]},
+      {:dialyxir, "~> 1.4", [only: [:dev, :test], runtime: false]}
     ]
   end
 
