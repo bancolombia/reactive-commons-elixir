@@ -15,6 +15,10 @@ jobs:
     if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
     name: Build and test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      actions: read
 
     steps:
       - name: Generate a token
@@ -47,7 +51,7 @@ jobs:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
       # Elixir
       - name: Set up Elixir
-        uses: erlef/setup-beam@v1.17.1
+        uses: erlef/setup-beam@v1
         with:
           version-type: strict
           version-file: ".tool-versions"
@@ -81,7 +85,7 @@ jobs:
         uses: hrishikesh-kadam/setup-lcov@v1
       - name: Validate code coverage
         if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
-        uses: zgosalvez/github-actions-report-lcov@v3
+        uses: zgosalvez/github-actions-report-lcov@v4
         with:
           coverage-files: cover/lcov.info
           minimum-coverage: 5 # TODO: Add minimum coverage
