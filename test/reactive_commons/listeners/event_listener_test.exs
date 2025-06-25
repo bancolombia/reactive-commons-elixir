@@ -53,8 +53,7 @@ defmodule EventListenerTest do
     test "returns empty list when no event listeners configured" do
       broker = :test_broker
 
-      with_mock MessageContext, [:passthrough],
-        handlers: fn ^broker -> %{event_listeners: []} end do
+      with_mock MessageContext, [:passthrough], handlers: fn ^broker -> %{event_listeners: []} end do
         result = EventListener.get_handlers(broker)
 
         assert result == []

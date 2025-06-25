@@ -53,8 +53,7 @@ defmodule QueryListenerTest do
     test "returns empty list when no query listeners configured" do
       broker = :test_broker
 
-      with_mock MessageContext, [:passthrough],
-        handlers: fn ^broker -> %{query_listeners: []} end do
+      with_mock MessageContext, [:passthrough], handlers: fn ^broker -> %{query_listeners: []} end do
         result = QueryListener.get_handlers(broker)
 
         assert result == []
