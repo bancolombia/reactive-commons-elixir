@@ -2,11 +2,11 @@ defmodule DiscardNotifier do
   @moduledoc false
   require Logger
 
-  def notify(%MessageToHandle{payload: payload}) do
+  def notify(%MessageToHandle{payload: payload}, broker) do
     message = Poison.decode(payload)
     event = create_event(message, payload)
 
-    case DomainEventBus.emit(event) do
+    case DomainEventBus.emit(broker, event) do
       :ok ->
         :ok
 

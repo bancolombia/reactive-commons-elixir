@@ -10,7 +10,7 @@ defmodule RabbitConnection do
   defstruct [:name, :connection, :parent_pid]
 
   def start_link(opts) do
-    GenServer.start_link(__MODULE__, opts, opts)
+    GenServer.start_link(__MODULE__, opts, name: opts[:name])
   end
 
   @impl true
@@ -75,16 +75,11 @@ defmodule RabbitConnection do
   end
 
   defp log_securely(connection_props) when is_binary(connection_props) do
-    %URI{
-      host: host,
-      port: port
-    } = URI.parse(connection_props)
-
+    %URI{host: host, port: port} = URI.parse(connection_props)
     "host: #{host}\nport: #{port}"
   end
 
   defp log_securely(connection_props) when is_list(connection_props) do
-    Key
     "host: #{Keyword.get(connection_props, :host)}\nport: #{Keyword.get(connection_props, :port)}"
   end
 end

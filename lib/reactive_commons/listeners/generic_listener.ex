@@ -6,12 +6,12 @@ defmodule GenericListener do
   @doc """
   Evaluate if should listen for this kind of events.
   """
-  @callback should_listen() :: boolean()
+  @callback should_listen(String.t()) :: boolean()
 
   @doc """
   Get initial state.
   """
-  @callback initial_state() :: map()
+  @callback initial_state(String.t()) :: map()
 
   @doc """
   Create resource topology.
@@ -26,52 +26,51 @@ defmodule GenericListener do
 
       @behaviour unquote(__MODULE__)
       @kind __MODULE__
-      @handlers_table unquote(opts[:handlers_table])
       @executor unquote(opts[:executor])
 
-      defstruct [:conn, :chan, :queue_name, :consumer_tag, :prefetch_count]
+      defstruct [:conn, :chan, :queue_name, :consumer_tag, :prefetch_count, :broker]
 
-      def start_link(_) do
-        GenServer.start_link(__MODULE__, [], name: __MODULE__)
+      def start_link(broker) do
+        name = build_name(__MODULE__, broker)
+        GenServer.start_link(__MODULE__, broker, name: name)
       end
 
       @impl true
-      def init([]) do
-        IO.puts("########### STARTING #{@kind} LISTENER #############")
+      def init(broker) do
+        IO.puts("########### STARTING #{@kind} LISTENER FOR BROKER #{broker} #############")
 
-        if should_listen() do
-          :ok = ConnectionsHolder.get_connection_async(__MODULE__)
-          :ok = create_ets(@handlers_table)
-          {:ok, struct(__MODULE__, initial_state())}
+        if should_listen(broker) do
+          component_name = build_name(__MODULE__, broker)
+          :ok = ConnectionsHolder.get_connection_async(component_name, broker)
+          :ok = create_ets(table_name(broker), broker)
+          {:ok, struct(__MODULE__, initial_state(broker))}
         else
-          IO.puts("########### #{@kind} LISTENER SKIPPED #############")
+          IO.puts("########### #{@kind} LISTENER SKIPPED FOR BROKER #{broker} #############")
           :ignore
         end
       end
 
-      # TODO: remove this method
-      def handle_cast(:sample, state) do
-        :ok = ConnectionsHolder.get_connection_async(__MODULE__)
-        {:noreply, state}
-      end
-
       @impl true
-      def handle_info({:connected, conn}, state) do
+      def handle_info({:connected, conn}, %{broker: broker} = state) do
         {:ok, chan} = AMQP.Channel.open(conn)
         {:ok, new_state} = create_topology(chan, state)
         %{queue_name: queue_name, prefetch_count: prefetch_count} = new_state
         :ok = AMQP.Basic.qos(chan, prefetch_count: prefetch_count)
         {:ok, consumer_tag} = AMQP.Basic.consume(chan, queue_name)
-        IO.puts("########### #{@kind} LISTENER STARTED for #{queue_name} #############")
+
+        IO.puts(
+          "########### #{@kind} LISTENER STARTED FOR QUEUE #{queue_name} IN BROKER #{broker} #############"
+        )
+
         {:noreply, %{new_state | chan: chan, consumer_tag: consumer_tag, conn: conn}}
       end
 
       def handle_info(
             {:basic_consume_ok, %{consumer_tag: consumer_tag}},
-            state = %{queue_name: queue}
+            state = %{queue_name: queue, broker: broker}
           ) do
         Logger.info(
-          "#{@kind} listener registered with consumer #{inspect(consumer_tag)} for queue #{queue}"
+          "#{@kind} listener registered with consumer #{inspect(consumer_tag)} for queue #{queue} in broker #{broker}"
         )
 
         {:noreply, %{state | consumer_tag: consumer_tag}}
@@ -79,10 +78,10 @@ defmodule GenericListener do
 
       def handle_info(
             {:basic_cancel, %{consumer_tag: consumer_tag}},
-            state = %{queue_name: queue}
+            state = %{queue_name: queue, broker: broker}
           ) do
         Logger.error(
-          "#{@kind} listener consumer #{inspect(consumer_tag)} stopped by the broker for queue #{queue}"
+          "#{@kind} listener consumer #{inspect(consumer_tag)} stopped by the broker for queue #{queue} in broker #{broker}"
         )
 
         {:stop, :normal, state}
@@ -90,10 +89,10 @@ defmodule GenericListener do
 
       def handle_info(
             {:basic_cancel_ok, %{consumer_tag: consumer_tag}},
-            state = %{queue_name: queue}
+            state = %{queue_name: queue, broker: broker}
           ) do
         Logger.warning(
-          "#{@kind} listener consumer #{inspect(consumer_tag)} cancelled for queue #{queue}"
+          "#{@kind} listener consumer #{inspect(consumer_tag)} cancelled for queue #{queue} in broker #{broker}"
         )
 
         {:noreply, state}
@@ -105,17 +104,22 @@ defmodule GenericListener do
       end
 
       @impl true
-      def handle_cast({:save_handlers, handlers = %{}}, state) do
-        :ok = save_handlers(handlers)
+      def handle_cast({:save_handlers, handlers = %{}}, state = %{broker: broker}) do
+        :ok = save_handlers(handlers, broker)
         {:noreply, state}
       end
 
-      def consume(props = %{delivery_tag: _, redelivered: _}, payload, _state = %{chan: chan}) do
-        message_to_handle = MessageToHandle.new(props, payload, chan, @handlers_table)
-        spawn_link(@executor, :handle_message, [message_to_handle])
+      def consume(
+            props = %{delivery_tag: _, redelivered: _},
+            payload,
+            state = %{chan: chan, broker: broker}
+          ) do
+        message_to_handle =
+          MessageToHandle.new(props, payload, chan, table_name(broker))
+        spawn_link(@executor, :handle_message, [message_to_handle, broker])
       end
 
-      def get_handlers, do: %{}
+      def get_handlers(broker), do: %{}
 
       defp stop_and_delete(_state = %{queue_name: nil}), do: :ok
       defp stop_and_delete(_state = %{consumer_tag: nil}), do: :ok
@@ -123,26 +127,40 @@ defmodule GenericListener do
       defp stop_and_delete(%{chan: chan, queue_name: queue_name, consumer_tag: tag}) do
         AMQP.Basic.cancel(chan, tag)
         AMQP.Queue.delete(chan, queue_name)
-
         Logger.info("Stopped and deleted queue #{queue_name}")
       end
 
-      defp save_handlers(handlers) do
-        Enum.each(handlers, fn {path, handler_fn} ->
-          :ets.insert(@handlers_table, {path, handler_fn})
-        end)
+      defp save_handlers(handlers, broker) do
+        Enum.each(
+          handlers,
+          fn {path, handler_fn} ->
+            :ets.insert(table_name(broker), {path, handler_fn})
+          end
+        )
+
+        :ok
       end
 
-      if unquote(opts[:handlers_table] != nil) do
-        defp create_ets(table_name) do
-          ^table_name = :ets.new(table_name, [:named_table, read_concurrency: true])
-          GenServer.cast(__MODULE__, {:save_handlers, get_handlers()})
-        end
-      else
-        defp create_ets(nil), do: :ok
+      defp table_name(broker), do: :"handler_table_#{build_name(__MODULE__, broker)}"
+
+      defp build_name(module, broker) do
+        module
+        |> Atom.to_string()
+        |> String.split(".")
+        |> List.last()
+        |> Macro.underscore()
+        |> Kernel.<>("_" <> to_string(broker))
+        |> String.to_atom()
       end
 
-      defoverridable consume: 3, get_handlers: 0
+      defp create_ets(table_name, broker) do
+        :ets.new(table_name, [:named_table, read_concurrency: true])
+        GenServer.cast(build_name(__MODULE__, broker), {:save_handlers, get_handlers(broker)})
+      end
+
+      defp create_ets(nil, _), do: :ok
+
+      defoverridable consume: 3, get_handlers: 1
     end
   end
 

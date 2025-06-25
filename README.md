@@ -52,12 +52,12 @@ Add `MessageRuntime` to your applications children passing the `AsyncConfig` par
 There are three semantic structures:
 
 - `DomainEvent`
-  This structure lets you represent an Event in the system. It accepts a `name`, any `data` that will be the information
+  This structure lets you represent an Event in the system. It accepts a `broker`, `name`, any `data` that will be the information
   to transport for that event (should be JSON serializable), and an optional `message_id`.
 
 - `Command`
   Another basic structure is the Command. This structure lets you represent a Command in the system. It accepts a
-  `name`, any `data` that will be the information to transport for that command (should be JSON serializable), and an
+  `broker`, `name`, any `data` that will be the information to transport for that command (should be JSON serializable), and an
   optional `command_id`.
 
 - `AsyncQuery`
@@ -91,7 +91,10 @@ This section describes the reactive API for producing and consuming messages usi
     data = Person.new_sample() # any data map
     ...
     command = Command.new(@command_name, data)
-    :ok = DirectAsyncGateway.send_command(command, @target) # use any control structure to handle errors
+   # default
+    :ok = DirectAsyncGateway.send_command(command, @target) # use default broker for any control structure to handle errors
+   # for any broker
+    :ok = DirectAsyncGateway.send_command(broker, command, @target) # use any broker for any control structure to handle errors
    ```
 
    1.2. Sending Async Queries
@@ -101,7 +104,10 @@ This section describes the reactive API for producing and consuming messages usi
     data = PersonDataReq.new_sample() # any data map
     ...
     query = AsyncQuery.new(@query_path, data)
+    # default
     {:ok, person} = DirectAsyncGateway.request_reply_wait(query, @target) # use any control structure to handle errors
+    # for any broker
+    {:ok, person} = DirectAsyncGateway.request_reply_wait(broker, query, @target) # use any broker for any control structure to handle errors
    ```
 
    1.3. Sending Domain Events
@@ -111,13 +117,49 @@ This section describes the reactive API for producing and consuming messages usi
     data = PersonRegistered.new_sample() # any data map
     ...
     event = DomainEvent.new(@event_name, data)
+   # default
     :ok = DomainEventBus.emit(event) # use any control structure to handle errors {:emit_fail, error}
+   # for any broker
+    :ok = DomainEventBus.emit(broker, event) # use any broker for any control structure to handle errors {:emit_fail, error}
    ```
    
     **See sample project for further details** [Sender](https://github.com/bancolombia/reactive-commons-elixir/blob/main/samples/query-client/lib/query_client/rest_controller.ex)
 
 
 2. Listening and handling for Domain Events, Commands and Async Queries
+
+   Default broker `:app`
+
+    ```elixir
+    import Config
+
+    config :query_server,
+        async_config: %{
+            application_name: "sample-query-server",
+            queries_reply: true
+        }
+    ```
+
+    ```elixir
+    defmodule QueryServer.Application do
+        @moduledoc false
+        alias QueryServer.SubsConfig
+        
+        use Application
+        
+        def start(_type, _args) do
+            async_config = struct(AsyncConfig, Application.fetch_env!(:query_server, :async_config))
+            children = [
+            {MessageRuntime, async_config},
+            {SubsConfig, []},
+            ]
+        
+            opts = [strategy: :one_for_one, name: QueryServer.Supervisor]
+            IO.puts("Start async query server: #{async_config.application_name}")
+            Supervisor.start_link(children, opts)
+        end
+    end
+    ```
 
    ```elixir
     defmodule QueryServer.SubsConfig do
@@ -159,6 +201,128 @@ This section describes the reactive API for producing and consuming messages usi
         end
     end
    ```
+
+   Any multiple brokers example: `:app` y `:app2`
+
+    ```elixir
+    import Config
+   
+    config :query_server,
+        async_config: %{
+            app: %{
+                application_name: "sample-query-server",
+                queries_reply: true
+            },
+            app2: %{
+                application_name: "sample-query-server2",
+                queries_reply: true
+            }
+        }
+    ```
+
+   ```elixir
+    defmodule QueryServer.Application do
+        @moduledoc false
+        alias QueryServer.SubsConfig
+        
+        use Application
+        
+        def start(_type, _args) do
+        async_config_map = Application.fetch_env!(:query_server, :async_config)
+        
+            children =
+              [
+                {MessageRuntime, async_config_map}
+              ] ++
+                Enum.map(Map.keys(async_config_map), fn broker ->
+                  Supervisor.child_spec({SubsConfig, :"#{broker}"},
+                    id: String.to_atom("subs_config_process_#{broker}")
+                  )
+                end)
+        
+            opts = [strategy: :one_for_one, name: QueryServer.Supervisor]
+        
+            IO.puts(
+              "Start async query server with brokers: #{Map.keys(async_config_map) |> Enum.join(", ")}"
+            )
+        
+            Supervisor.start_link(children, opts)
+        end
+    end
+   ```   
+
+   ```elixir
+    defmodule QueryServer.SubsConfig do
+        use GenServer
+        
+        @query_name "GetPerson"
+        @command_name "RegisterPerson"
+        @event_name "PersonRegistered"
+        @notification_event_name "ConfigurationChanged"
+        
+        def start_link(broker) do
+            GenServer.start_link(__MODULE__, broker, name: :"query_server_subconfig_#{broker}")
+        end
+        
+        @impl true
+        def init(broker) do
+            HandlerRegistry.serve_query(broker, @query_name, fn query -> get_person(query, broker) end)
+            |> HandlerRegistry.handle_command(@command_name, fn command ->
+            register_person(command, broker)
+            end)
+            |> HandlerRegistry.listen_event(@event_name, fn event ->
+            person_registered(event, broker)
+            end)
+            |> HandlerRegistry.listen_notification_event(@notification_event_name, fn notification ->
+            configuration_changed(notification, broker)
+            end)
+            |> HandlerRegistry.commit_config()
+            
+            {:ok, nil}
+        end
+        
+        def get_person(%{} = request, broker) do
+            IO.puts("Handling async query #{inspect(request)} in broker #{broker}")
+            Process.sleep(150)
+            Person.new_sample()
+        end
+        
+        def register_person(%{} = command, broker) do
+            IO.puts("Handling command #{inspect(command)} in broker #{broker}")
+            event = DomainEvent.new(@event_name, PersonRegistered.new_sample(command["data"]))
+            Process.sleep(150)
+            :ok = DomainEventBus.emit(broker, event)
+        end
+        
+        def person_registered(%{} = event, broker) do
+            IO.puts("Handling event #{inspect(event)} in broker #{broker}")
+            Process.sleep(5000)
+            IO.puts("Handling event ends")
+        end
+        
+        def configuration_changed(%{} = event, broker) do
+            IO.puts("Handling notification event #{inspect(event)} in broker #{broker}")
+            Process.sleep(5000)
+            IO.puts("Handling notification event ends")
+        end
+    end
+        
+    defmodule Person do
+        defstruct [:name, :doc, :type]
+        
+        def new_sample do
+            %__MODULE__{name: "Daniel", doc: "1234", type: "Principal"}
+        end
+    end
+ 
+    defmodule PersonRegistered do
+        defstruct [:person, :registered_at]
+        
+        def new_sample(person) do
+            %__MODULE__{person: person, registered_at: :os.system_time(:millisecond)}
+        end
+    end
+   ```    
 
     **See sample project for further details** [Receiver](https://github.com/bancolombia/reactive-commons-elixir/blob/main/samples/query-server/lib/query_server/subs_config.ex)
 

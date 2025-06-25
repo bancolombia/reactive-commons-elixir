@@ -4,13 +4,13 @@ defmodule MessageContext do
   """
   use GenServer
   require Logger
-  @table_name :msg_ctx
 
   @default_values %{
     reply_exchange: "globalReply",
     direct_exchange: "directMessages",
     events_exchange: "domainEvents",
     connection_props: "amqp://guest:guest@localhost",
+    broker: "app",
     connection_assignation: %{
       ReplyListener: ListenerConn,
       QueryListener: ListenerConn,
@@ -34,23 +34,25 @@ defmodule MessageContext do
   }
 
   def start_link(config = %AsyncConfig{}) do
-    GenServer.start_link(__MODULE__, config, name: __MODULE__)
+    broker = config.broker
+    GenServer.start_link(__MODULE__, config, name: build_name(broker))
   end
 
   @impl true
   def init(config = %AsyncConfig{}) do
-    Logger.info("Starting message context")
+    broker = config.broker
+    Logger.info("Starting message context for broker #{broker}")
 
     config
     |> put_default_values()
     |> put_route_info()
-    |> save_in_ets()
+    |> save_in_ets(broker)
 
-    {:ok, nil}
+    {:ok, config}
   end
 
-  def save_handlers_config(config = %HandlersConfig{}) do
-    GenServer.call(__MODULE__, {:save_handlers_config, config})
+  def save_handlers_config(config = %HandlersConfig{}, broker) do
+    GenServer.call(build_name(broker), {:save_handlers_config, config})
   end
 
   defp put_route_info(config = %AsyncConfig{application_name: app_name}) do
@@ -77,41 +79,52 @@ defmodule MessageContext do
     end
   end
 
-  defp save_in_ets(config) do
-    :ets.new(@table_name, [:named_table, read_concurrency: true])
-    :ets.insert(@table_name, {:conf, config})
+  defp save_in_ets(config, broker) do
+    table = ets_table_name(broker)
+    :ets.new(table, [:named_table, read_concurrency: true])
+    :ets.insert(table, {:conf, config})
   end
 
-  def reply_queue_name, do: config().reply_queue
-  def gen_reply_queue_name, do: GenServer.call(__MODULE__, {:generate_and_save, "reply"})
-  def query_queue_name, do: config().query_queue
-  def command_queue_name, do: config().command_queue
-  def event_queue_name, do: config().event_queue
-  def notification_event_queue_name, do: config().notification_event_queue
+  defp ets_table_name(broker), do: :"msg_ctx_table_#{broker}"
 
-  def gen_notification_event_queue_name,
-    do: GenServer.call(__MODULE__, {:generate_and_save, "notification"})
+  def reply_queue_name(broker), do: config(broker).reply_queue
 
-  def reply_routing_key, do: config().reply_routing_key
-  def reply_exchange_name, do: config().reply_exchange
-  def direct_exchange_name, do: config().direct_exchange
-  def events_exchange_name, do: config().events_exchange
-  def with_dlq_retry, do: config().with_dlq_retry
-  def retry_delay, do: config().retry_delay
-  def max_retries, do: config().max_retries
-  def prefetch_count, do: config().prefetch_count
-  def application_name, do: config().application_name
-  def topology, do: config().topology
+  def gen_reply_queue_name(broker),
+    do: GenServer.call(build_name(broker), {:generate_and_save, "reply", broker})
 
-  def config do
-    [{:conf, config}] = :ets.lookup(@table_name, :conf)
+  def query_queue_name(broker), do: config(broker).query_queue
+  def command_queue_name(broker), do: config(broker).command_queue
+  def event_queue_name(broker), do: config(broker).event_queue
+
+  def notification_event_queue_name(broker),
+    do: config(broker).notification_event_queue
+
+  def gen_notification_event_queue_name(broker),
+    do: GenServer.call(build_name(broker), {:generate_and_save, "notification", broker})
+
+  def reply_routing_key(broker), do: config(broker).reply_routing_key
+  def reply_exchange_name(broker), do: config(broker).reply_exchange
+  def direct_exchange_name(broker), do: config(broker).direct_exchange
+  def events_exchange_name(broker), do: config(broker).events_exchange
+  def with_dlq_retry(broker), do: config(broker).with_dlq_retry
+  def retry_delay(broker), do: config(broker).retry_delay
+  def max_retries(broker), do: config(broker).max_retries
+  def prefetch_count(broker), do: config(broker).prefetch_count
+  def application_name(broker), do: config(broker).application_name
+  def topology(broker), do: config(broker).topology
+
+  def config(broker) do
+    table = ets_table_name(broker)
+    [{:conf, config}] = :ets.lookup(table, :conf)
     config
   end
 
-  def handlers_configured?, do: handlers() != []
+  def handlers_configured?(broker), do: handlers(broker) != []
 
-  def handlers do
-    case :ets.lookup(@table_name, :handlers) do
+  def handlers(broker) do
+    table = ets_table_name(broker)
+
+    case :ets.lookup(table, :handlers) do
       [{:handlers, config}] -> config
       [] -> []
     end
@@ -119,13 +132,14 @@ defmodule MessageContext do
 
   @impl true
   def handle_call({:save_handlers_config, config}, _from, state) do
-    Logger.info("Saving handlers config!")
-    true = :ets.insert(@table_name, {:handlers, config})
+    Logger.info("Saving handlers config for broker #{state.broker}")
+    true = :ets.insert(ets_table_name(state.broker), {:handlers, config})
     {:reply, :ok, state}
   end
 
-  def handle_call({:generate_and_save, type}, _from, state) do
-    cfg = %AsyncConfig{application_name: app_name} = config()
+  @impl true
+  def handle_call({:generate_and_save, type, broker}, _from, state) do
+    cfg = %AsyncConfig{application_name: app_name} = config(broker)
     generated = NameGenerator.generate(app_name, type)
 
     attr =
@@ -135,11 +149,13 @@ defmodule MessageContext do
       end
 
     cfg = Map.put(cfg, attr, generated)
-    :ets.insert(@table_name, {:conf, cfg})
+    :ets.insert(ets_table_name(broker), {:conf, cfg})
     {:reply, generated, state}
   end
 
-  def table do
-    :ets.tab2list(@table_name)
+  def table(broker) do
+    :ets.tab2list(ets_table_name(broker))
   end
+
+  defp build_name(broker), do: :"msg_ctx_#{broker}"
 end

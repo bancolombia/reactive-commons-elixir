@@ -11,6 +11,7 @@ defmodule AsyncConfig do
     reply_exchange: "globalReply",
     direct_exchange: "directMessages",
     events_exchange: "domainEvents",
+    broker: "app",
     connection_props: "amqp://guest:guest@localhost", this value is passed as uri_or_options in https://hexdocs.pm/amqp/AMQP.Connection.html#open/1
     connection_assignation: %{
       ReplyListener: ListenerConn,
@@ -54,6 +55,7 @@ defmodule AsyncConfig do
     :retry_delay,
     :max_retries,
     :prefetch_count,
+    :broker,
     extractor_debug: false
   ]
 
