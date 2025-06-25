@@ -4,7 +4,8 @@ defmodule ReplyListener do
   require Logger
 
   @impl true
-  def should_listen(broker), do: ListenersValidator.should_listen_replies(MessageContext.config(broker))
+  def should_listen(broker),
+    do: ListenersValidator.should_listen_replies(MessageContext.config(broker))
 
   @impl true
   def initial_state(broker) do
@@ -14,7 +15,7 @@ defmodule ReplyListener do
   @impl true
   def create_topology(chan, state) do
     # Topology
-    broker= state.broker
+    broker = state.broker
     stop_and_delete(state)
     queue_name = MessageContext.gen_reply_queue_name(broker)
     exchange_name = MessageContext.reply_exchange_name(broker)

@@ -21,6 +21,9 @@ defmodule DomainEventBus do
   end
 
   def headers(broker) do
-    [{MessageHeaders.h_source_application(), :longstr, MessageContext.config(broker).application_name}]
+    [
+      {MessageHeaders.h_source_application(), :longstr,
+       MessageContext.config(broker).application_name}
+    ]
   end
 end

@@ -43,7 +43,7 @@ defmodule RabbitConnectionTest do
     end
 
     test "validates required connection_props option" do
-      assert {:ok, _pid} = RabbitConnection.start_link([connection_props: [host: "localhost"]])
+      assert {:ok, _pid} = RabbitConnection.start_link(connection_props: [host: "localhost"])
     end
   end
 
@@ -169,10 +169,11 @@ defmodule RabbitConnectionTest do
       reason = :connection_closed
       ref = make_ref()
 
-      result = RabbitConnection.handle_info(
-        {:DOWN, ref, :process, self(), reason},
-        %RabbitConnection{}
-      )
+      result =
+        RabbitConnection.handle_info(
+          {:DOWN, ref, :process, self(), reason},
+          %RabbitConnection{}
+        )
 
       assert {:stop, {:connection_lost, ^reason}, nil} = result
     end
@@ -181,10 +182,11 @@ defmodule RabbitConnectionTest do
       reasons = [:normal, :shutdown, {:shutdown, :tcp_closed}, :killed]
 
       for reason <- reasons do
-        result = RabbitConnection.handle_info(
-          {:DOWN, make_ref(), :process, self(), reason},
-          %RabbitConnection{}
-        )
+        result =
+          RabbitConnection.handle_info(
+            {:DOWN, make_ref(), :process, self(), reason},
+            %RabbitConnection{}
+          )
 
         assert {:stop, {:connection_lost, ^reason}, nil} = result
       end
@@ -245,11 +247,12 @@ defmodule RabbitConnectionTest do
 
   describe "process monitoring and lifecycle" do
     test "monitors connection process correctly" do
-      test_process = spawn_link(fn ->
-        receive do
-          :stop -> :ok
-        end
-      end)
+      test_process =
+        spawn_link(fn ->
+          receive do
+            :stop -> :ok
+          end
+        end)
 
       ref = Process.monitor(test_process)
 

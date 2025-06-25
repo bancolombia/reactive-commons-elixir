@@ -51,7 +51,7 @@ defmodule GenericListener do
       end
 
       @impl true
-      def handle_info({:connected, conn}, %{broker: broker} = state) do
+      def handle_info({:connected, conn}, state = %{broker: broker}) do
         {:ok, chan} = AMQP.Channel.open(conn)
         {:ok, new_state} = create_topology(chan, state)
         %{queue_name: queue_name, prefetch_count: prefetch_count} = new_state
@@ -116,6 +116,7 @@ defmodule GenericListener do
           ) do
         message_to_handle =
           MessageToHandle.new(props, payload, chan, table_name(broker))
+
         spawn_link(@executor, :handle_message, [message_to_handle, broker])
       end
 
@@ -141,7 +142,8 @@ defmodule GenericListener do
         :ok
       end
 
-      defp table_name(broker), do: :"handler_table_#{build_name(__MODULE__, broker)}"
+      defp table_name(broker),
+        do: String.to_existing_atom("handler_table_#{build_name(__MODULE__, broker)}")
 
       defp build_name(module, broker) do
         module
@@ -150,7 +152,7 @@ defmodule GenericListener do
         |> List.last()
         |> Macro.underscore()
         |> Kernel.<>("_" <> to_string(broker))
-        |> String.to_atom()
+        |> String.to_existing_atom()
       end
 
       defp create_ets(table_name, broker) do

@@ -24,11 +24,11 @@ defmodule MessageRuntime do
     Supervisor.init(children, strategy: :one_for_one)
   end
 
-  defp normalize_config(%AsyncConfig{} = conf) do
+  defp normalize_config(conf = %AsyncConfig{}) do
     %{app: Map.from_struct(conf)}
   end
 
-  defp normalize_config(%{} = config_map) do
+  defp normalize_config(config_map = %{}) do
     if Enum.all?(config_map, fn {_k, v} -> is_map(v) end) do
       config_map
     else
@@ -41,16 +41,22 @@ defmodule MessageRuntime do
     use Supervisor
 
     def start_link(config = %{broker: broker}) do
-      name = :"message_runtime_#{broker}"
+      name = String.to_existing_atom("message_runtime_#{broker}")
       Supervisor.start_link(__MODULE__, config, name: name)
     end
 
     @impl true
     def init(config = %{broker: broker, extractor_debug: true}) do
       children = [
-        Supervisor.child_spec({MessageContext, config}, id: :"msg_ctx_#{broker}"),
-        Supervisor.child_spec({ConnectionsHolder, broker}, id: :"connections_holder_#{broker}"),
-        Supervisor.child_spec({MessageExtractor, broker}, id: :"message_extractor_#{broker}")
+        Supervisor.child_spec({MessageContext, config},
+          id: String.to_existing_atom("msg_ctx_#{broker}")
+        ),
+        Supervisor.child_spec({ConnectionsHolder, broker},
+          id: String.to_existing_atom("connections_holder_#{broker}")
+        ),
+        Supervisor.child_spec({MessageExtractor, broker},
+          id: String.to_existing_atom("message_extractor_#{broker}")
+        )
       ]
 
       Supervisor.init(children, strategy: :one_for_one)
@@ -59,12 +65,24 @@ defmodule MessageRuntime do
     @impl true
     def init(config = %{broker: broker}) do
       children = [
-        Supervisor.child_spec({MessageContext, config}, id: :"msg_ctx_#{broker}"),
-        Supervisor.child_spec({ConnectionsHolder, broker}, id: :"connections_holder_#{broker}"),
-        Supervisor.child_spec({ReplyRouter, broker}, id: :"reply_router_#{broker}"),
-        Supervisor.child_spec({ReplyListener, broker}, id: :"reply_listener_#{broker}"),
-        Supervisor.child_spec({MessageSender, broker}, id: :"message_sender_#{broker}"),
-        Supervisor.child_spec({ListenerController, broker}, id: :"listener_controller_#{broker}")
+        Supervisor.child_spec({MessageContext, config},
+          id: String.to_existing_atom("msg_ctx_#{broker}")
+        ),
+        Supervisor.child_spec({ConnectionsHolder, broker},
+          id: String.to_existing_atom("connections_holder_#{broker}")
+        ),
+        Supervisor.child_spec({ReplyRouter, broker},
+          id: String.to_existing_atom("reply_router_#{broker}")
+        ),
+        Supervisor.child_spec({ReplyListener, broker},
+          id: String.to_existing_atom("reply_listener_#{broker}")
+        ),
+        Supervisor.child_spec({MessageSender, broker},
+          id: String.to_existing_atom("message_sender_#{broker}")
+        ),
+        Supervisor.child_spec({ListenerController, broker},
+          id: String.to_existing_atom("listener_controller_#{broker}")
+        )
       ]
 
       Supervisor.init(children, strategy: :rest_for_one)

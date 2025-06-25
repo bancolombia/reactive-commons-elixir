@@ -34,7 +34,8 @@ defmodule NotificationEventListener do
     {:ok, %{state | queue_name: queue_name}}
   end
 
-  defp table_name(broker), do: :"handler_table_#{build_name(__MODULE__, broker)}"
+  defp table_name(broker),
+    do: String.to_existing_atom("handler_table_#{build_name(__MODULE__, broker)}")
 
   defp build_name(module, broker) do
     module
@@ -43,6 +44,6 @@ defmodule NotificationEventListener do
     |> List.last()
     |> Macro.underscore()
     |> Kernel.<>("_" <> to_string(broker))
-    |> String.to_atom()
+    |> String.to_existing_atom()
   end
 end

@@ -1,9 +1,9 @@
 defmodule DirectAsyncGatewayTest do
   use ExUnit.Case
   import Mock
-  alias DirectAsyncGateway
   alias AsyncQuery
   alias Command
+  alias DirectAsyncGateway
   alias OutMessage
 
   @broker :app
@@ -43,7 +43,7 @@ defmodule DirectAsyncGatewayTest do
         {ReplyRouter, [],
          [
            register_reply_route: fn @broker, @correlation_id, _pid -> :ok end
-         ]},
+         ]}
       ]) do
         result = DirectAsyncGateway.request_reply(query, @target_name)
 
@@ -444,6 +444,7 @@ defmodule DirectAsyncGatewayTest do
                       key == "sourceApplication" && type == :longstr &&
                         value == @application_name
                     end)
+
              refute Enum.any?(msg.headers, fn {key, _, _} -> key == "x-reply_id" end)
              refute Enum.any?(msg.headers, fn {key, _, _} -> key == "x-serveQuery-id" end)
              refute Enum.any?(msg.headers, fn {key, _, _} -> key == "x-correlation-id" end)

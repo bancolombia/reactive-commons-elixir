@@ -47,8 +47,8 @@ defmodule ConnectionsHolder do
     |> String.split("_")
     |> Enum.drop(-1)
     |> Enum.map(&String.capitalize/1)
-    |> Enum.join()
-    |> String.to_atom()
+    |> Enum.map_join()
+    |> String.to_existing_atom()
   end
 
   @impl true
@@ -94,6 +94,7 @@ defmodule ConnectionsHolder do
         %{conn_ref: conn_ref},
         fn info -> Map.put(info, :conn_ref, conn_ref) end
       )
+
     {:noreply, %{state | connections: connections}}
   end
 
@@ -122,8 +123,8 @@ defmodule ConnectionsHolder do
     |> List.last()
     |> Macro.underscore()
     |> Kernel.<>("_" <> to_string(broker))
-    |> String.to_atom()
+    |> String.to_existing_atom()
   end
 
-  defp build_name(broker), do: String.to_atom("connections_holder_#{broker}")
+  defp build_name(broker), do: String.to_existing_atom("connections_holder_#{broker}")
 end

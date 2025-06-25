@@ -166,7 +166,7 @@ defmodule ReplyRouterTest do
     end
 
     test "handles different data types for correlation_id and reply_message", %{broker: broker} do
-      correlation_id = 12345
+      correlation_id = 12_345
       reply_message = %{status: :ok, data: "test"}
       test_pid = self()
 

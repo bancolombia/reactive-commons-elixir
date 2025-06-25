@@ -16,7 +16,11 @@ defmodule MessageRuntimeTest do
     end
 
     test "starts the supervisor with config as map of multiple brokers" do
-      conf = %{broker2: %{application_name: "sample-broker2"}, broker3: %{application_name: "sample-broker3"}}
+      conf = %{
+        broker2: %{application_name: "sample-broker2"},
+        broker3: %{application_name: "sample-broker3"}
+      }
+
       {:ok, pid} = MessageRuntime.start_link(conf)
       assert is_pid(pid)
       assert Process.alive?(pid)

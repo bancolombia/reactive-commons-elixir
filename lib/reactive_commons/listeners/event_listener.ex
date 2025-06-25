@@ -59,7 +59,8 @@ defmodule EventListener do
     {:ok, state}
   end
 
-  defp table_name(broker), do: :"handler_table_#{build_name(__MODULE__, broker)}"
+  defp table_name(broker),
+    do: String.to_existing_atom("handler_table_#{build_name(__MODULE__, broker)}")
 
   defp build_name(module, broker) do
     module
@@ -68,6 +69,6 @@ defmodule EventListener do
     |> List.last()
     |> Macro.underscore()
     |> Kernel.<>("_" <> to_string(broker))
-    |> String.to_atom()
+    |> String.to_existing_atom()
   end
 end

@@ -41,7 +41,12 @@ defmodule CommandListener do
         )
 
       {:ok, _} =
-        declare_dlq(chan, command_queue_name, direct_exchange_name, MessageContext.retry_delay(broker))
+        declare_dlq(
+          chan,
+          command_queue_name,
+          direct_exchange_name,
+          MessageContext.retry_delay(broker)
+        )
 
       :ok =
         AMQP.Queue.bind(

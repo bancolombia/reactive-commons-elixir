@@ -10,7 +10,9 @@ defmodule ReactiveCommonsSetup do
       use Supervisor
 
       def start_link(broker) when is_atom(broker) do
-        Supervisor.start_link(__MODULE__, broker, name: :"reactive_commons_setup_#{broker}")
+        Supervisor.start_link(__MODULE__, broker,
+          name: String.to_existing_atom("reactive_commons_setup_#{broker}")
+        )
       end
 
       @impl true

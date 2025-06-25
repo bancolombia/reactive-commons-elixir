@@ -10,7 +10,8 @@ defmodule CommandListenerTest do
       broker = :test_broker
       handlers = [:handler1, :handler2]
 
-      with_mock MessageContext, [:passthrough], handlers: fn ^broker -> %{command_listeners: handlers} end do
+      with_mock MessageContext, [:passthrough],
+        handlers: fn ^broker -> %{command_listeners: handlers} end do
         with_mock ListenersValidator, [:passthrough], has_handlers: fn ^handlers -> true end do
           assert CommandListener.should_listen(broker) == true
 
@@ -24,7 +25,8 @@ defmodule CommandListenerTest do
       broker = :test_broker
       handlers = []
 
-      with_mock MessageContext, [:passthrough], handlers: fn ^broker -> %{command_listeners: handlers} end do
+      with_mock MessageContext, [:passthrough],
+        handlers: fn ^broker -> %{command_listeners: handlers} end do
         with_mock ListenersValidator, [:passthrough], has_handlers: fn ^handlers -> false end do
           assert CommandListener.should_listen(broker) == false
 
@@ -37,7 +39,8 @@ defmodule CommandListenerTest do
     test "handles nil handlers gracefully" do
       broker = :test_broker
 
-      with_mock MessageContext, [:passthrough], handlers: fn ^broker -> %{command_listeners: nil} end do
+      with_mock MessageContext, [:passthrough],
+        handlers: fn ^broker -> %{command_listeners: nil} end do
         with_mock ListenersValidator, [:passthrough], has_handlers: fn nil -> false end do
           assert CommandListener.should_listen(broker) == false
 
@@ -54,8 +57,7 @@ defmodule CommandListenerTest do
       expected_handlers = [:handler1, :handler2, :handler3]
 
       with_mock MessageContext, [:passthrough],
-                handlers: fn ^broker -> %{command_listeners: expected_handlers} end do
-
+        handlers: fn ^broker -> %{command_listeners: expected_handlers} end do
         result = CommandListener.get_handlers(broker)
 
         assert result == expected_handlers
@@ -67,8 +69,7 @@ defmodule CommandListenerTest do
       broker = :test_broker
 
       with_mock MessageContext, [:passthrough],
-                handlers: fn ^broker -> %{command_listeners: []} end do
-
+        handlers: fn ^broker -> %{command_listeners: []} end do
         result = CommandListener.get_handlers(broker)
 
         assert result == []
@@ -80,8 +81,7 @@ defmodule CommandListenerTest do
       broker = :test_broker
 
       with_mock MessageContext, [:passthrough],
-                handlers: fn ^broker -> %{command_listeners: nil} end do
-
+        handlers: fn ^broker -> %{command_listeners: nil} end do
         result = CommandListener.get_handlers(broker)
 
         assert result == nil
@@ -97,9 +97,8 @@ defmodule CommandListenerTest do
       prefetch_count = 5
 
       with_mock MessageContext, [:passthrough],
-                command_queue_name: fn ^broker -> queue_name end,
-                prefetch_count: fn ^broker -> prefetch_count end do
-
+        command_queue_name: fn ^broker -> queue_name end,
+        prefetch_count: fn ^broker -> prefetch_count end do
         result = CommandListener.initial_state(broker)
 
         expected_state = %{
@@ -122,9 +121,8 @@ defmodule CommandListenerTest do
         prefetch_count = 1
 
         with_mock MessageContext, [:passthrough],
-                  command_queue_name: fn ^broker -> queue_name end,
-                  prefetch_count: fn ^broker -> prefetch_count end do
-
+          command_queue_name: fn ^broker -> queue_name end,
+          prefetch_count: fn ^broker -> prefetch_count end do
           result = CommandListener.initial_state(broker)
 
           expected_state = %{
@@ -143,6 +141,7 @@ defmodule CommandListenerTest do
     setup do
       chan = :test_channel
       broker = :test_broker
+
       state = %{
         broker: broker,
         prefetch_count: 5,
@@ -152,23 +151,30 @@ defmodule CommandListenerTest do
       %{chan: chan, state: state, broker: broker}
     end
 
-    test "creates topology without DLQ when DLQ retry is disabled", %{chan: chan, state: state, broker: broker} do
+    test "creates topology without DLQ when DLQ retry is disabled", %{
+      chan: chan,
+      state: state,
+      broker: broker
+    } do
       direct_exchange = "test.direct.exchange"
       command_queue = "test.command.queue"
 
       with_mocks([
-        {MessageContext, [:passthrough], [
-          direct_exchange_name: fn ^broker -> direct_exchange end,
-          command_queue_name: fn ^broker -> command_queue end,
-          with_dlq_retry: fn ^broker -> false end
-        ]},
-        {AMQP.Exchange, [:passthrough], [
-          declare: fn _chan, _name, _type, _opts -> :ok end
-        ]},
-        {AMQP.Queue, [:passthrough], [
-          declare: fn _chan, _name, _opts -> {:ok, %{}} end,
-          bind: fn _chan, _queue, _exchange, _opts -> :ok end
-        ]}
+        {MessageContext, [:passthrough],
+         [
+           direct_exchange_name: fn ^broker -> direct_exchange end,
+           command_queue_name: fn ^broker -> command_queue end,
+           with_dlq_retry: fn ^broker -> false end
+         ]},
+        {AMQP.Exchange, [:passthrough],
+         [
+           declare: fn _chan, _name, _type, _opts -> :ok end
+         ]},
+        {AMQP.Queue, [:passthrough],
+         [
+           declare: fn _chan, _name, _opts -> {:ok, %{}} end,
+           bind: fn _chan, _queue, _exchange, _opts -> :ok end
+         ]}
       ]) do
         result = CommandListener.create_topology(chan, state)
 
@@ -178,7 +184,9 @@ defmodule CommandListenerTest do
 
         assert_called(AMQP.Queue.declare(chan, command_queue, durable: true))
 
-        assert_called(AMQP.Queue.bind(chan, command_queue, direct_exchange, routing_key: command_queue))
+        assert_called(
+          AMQP.Queue.bind(chan, command_queue, direct_exchange, routing_key: command_queue)
+        )
 
         assert_called(MessageContext.direct_exchange_name(broker))
         assert_called(MessageContext.command_queue_name(broker))
@@ -186,25 +194,32 @@ defmodule CommandListenerTest do
       end
     end
 
-    test "creates topology with DLQ when DLQ retry is enabled", %{chan: chan, state: state, broker: broker} do
+    test "creates topology with DLQ when DLQ retry is enabled", %{
+      chan: chan,
+      state: state,
+      broker: broker
+    } do
       direct_exchange = "test.direct.exchange"
       command_queue = "test.command.queue"
       retry_delay = 3000
 
       with_mocks([
-        {MessageContext, [:passthrough], [
-          direct_exchange_name: fn ^broker -> direct_exchange end,
-          command_queue_name: fn ^broker -> command_queue end,
-          with_dlq_retry: fn ^broker -> true end,
-          retry_delay: fn ^broker -> retry_delay end
-        ]},
-        {AMQP.Exchange, [:passthrough], [
-          declare: fn _chan, _name, _type, _opts -> :ok end
-        ]},
-        {AMQP.Queue, [:passthrough], [
-          declare: fn _chan, _name, _opts -> {:ok, %{}} end,
-          bind: fn _chan, _queue, _exchange, _opts -> :ok end
-        ]}
+        {MessageContext, [:passthrough],
+         [
+           direct_exchange_name: fn ^broker -> direct_exchange end,
+           command_queue_name: fn ^broker -> command_queue end,
+           with_dlq_retry: fn ^broker -> true end,
+           retry_delay: fn ^broker -> retry_delay end
+         ]},
+        {AMQP.Exchange, [:passthrough],
+         [
+           declare: fn _chan, _name, _type, _opts -> :ok end
+         ]},
+        {AMQP.Queue, [:passthrough],
+         [
+           declare: fn _chan, _name, _opts -> {:ok, %{}} end,
+           bind: fn _chan, _queue, _exchange, _opts -> :ok end
+         ]}
       ]) do
         result = CommandListener.create_topology(chan, state)
 
@@ -212,14 +227,25 @@ defmodule CommandListenerTest do
 
         assert_called(AMQP.Exchange.declare(chan, direct_exchange, :direct, durable: true))
 
-        assert_called(AMQP.Exchange.declare(chan, direct_exchange <> ".DLQ", :direct, durable: true))
+        assert_called(
+          AMQP.Exchange.declare(chan, direct_exchange <> ".DLQ", :direct, durable: true)
+        )
 
         expected_args = [{"x-dead-letter-exchange", :longstr, direct_exchange <> ".DLQ"}]
-        assert_called(AMQP.Queue.declare(chan, command_queue, durable: true, arguments: expected_args))
 
-        assert_called(AMQP.Queue.bind(chan, command_queue <> ".DLQ", direct_exchange <> ".DLQ", routing_key: command_queue))
+        assert_called(
+          AMQP.Queue.declare(chan, command_queue, durable: true, arguments: expected_args)
+        )
 
-        assert_called(AMQP.Queue.bind(chan, command_queue, direct_exchange, routing_key: command_queue))
+        assert_called(
+          AMQP.Queue.bind(chan, command_queue <> ".DLQ", direct_exchange <> ".DLQ",
+            routing_key: command_queue
+          )
+        )
+
+        assert_called(
+          AMQP.Queue.bind(chan, command_queue, direct_exchange, routing_key: command_queue)
+        )
 
         assert_called(MessageContext.direct_exchange_name(broker))
         assert_called(MessageContext.command_queue_name(broker))
@@ -233,18 +259,21 @@ defmodule CommandListenerTest do
       command_queue = "commands.queue"
 
       with_mocks([
-        {MessageContext, [:passthrough], [
-          direct_exchange_name: fn ^broker -> direct_exchange end,
-          command_queue_name: fn ^broker -> command_queue end,
-          with_dlq_retry: fn ^broker -> false end
-        ]},
-        {AMQP.Exchange, [:passthrough], [
-          declare: fn _chan, _name, _type, _opts -> :ok end
-        ]},
-        {AMQP.Queue, [:passthrough], [
-          declare: fn _chan, _name, _opts -> {:ok, %{}} end,
-          bind: fn _chan, _queue, _exchange, _opts -> :ok end
-        ]}
+        {MessageContext, [:passthrough],
+         [
+           direct_exchange_name: fn ^broker -> direct_exchange end,
+           command_queue_name: fn ^broker -> command_queue end,
+           with_dlq_retry: fn ^broker -> false end
+         ]},
+        {AMQP.Exchange, [:passthrough],
+         [
+           declare: fn _chan, _name, _type, _opts -> :ok end
+         ]},
+        {AMQP.Queue, [:passthrough],
+         [
+           declare: fn _chan, _name, _opts -> {:ok, %{}} end,
+           bind: fn _chan, _queue, _exchange, _opts -> :ok end
+         ]}
       ]) do
         CommandListener.create_topology(chan, state)
 
@@ -257,45 +286,53 @@ defmodule CommandListenerTest do
       command_queue = "specific.command.queue.name"
 
       with_mocks([
-        {MessageContext, [:passthrough], [
-          direct_exchange_name: fn ^broker -> direct_exchange end,
-          command_queue_name: fn ^broker -> command_queue end,
-          with_dlq_retry: fn ^broker -> false end
-        ]},
-        {AMQP.Exchange, [:passthrough], [
-          declare: fn _chan, _name, _type, _opts -> :ok end
-        ]},
-        {AMQP.Queue, [:passthrough], [
-          declare: fn _chan, _name, _opts -> {:ok, %{}} end,
-          bind: fn _chan, _queue, _exchange, _opts -> :ok end
-        ]}
+        {MessageContext, [:passthrough],
+         [
+           direct_exchange_name: fn ^broker -> direct_exchange end,
+           command_queue_name: fn ^broker -> command_queue end,
+           with_dlq_retry: fn ^broker -> false end
+         ]},
+        {AMQP.Exchange, [:passthrough],
+         [
+           declare: fn _chan, _name, _type, _opts -> :ok end
+         ]},
+        {AMQP.Queue, [:passthrough],
+         [
+           declare: fn _chan, _name, _opts -> {:ok, %{}} end,
+           bind: fn _chan, _queue, _exchange, _opts -> :ok end
+         ]}
       ]) do
         CommandListener.create_topology(chan, state)
 
-        assert_called(AMQP.Queue.bind(chan, command_queue, direct_exchange, routing_key: command_queue))
+        assert_called(
+          AMQP.Queue.bind(chan, command_queue, direct_exchange, routing_key: command_queue)
+        )
       end
     end
 
     test "handles different retry delay values", %{chan: chan, state: state, broker: broker} do
       direct_exchange = "test.exchange"
       command_queue = "test.queue"
-      retry_delays = [1000, 5000, 10000, 30000]
+      retry_delays = [1000, 5000, 10_000, 30_000]
 
       Enum.each(retry_delays, fn retry_delay ->
         with_mocks([
-          {MessageContext, [:passthrough], [
-            direct_exchange_name: fn ^broker -> direct_exchange end,
-            command_queue_name: fn ^broker -> command_queue end,
-            with_dlq_retry: fn ^broker -> true end,
-            retry_delay: fn ^broker -> retry_delay end
-          ]},
-          {AMQP.Exchange, [:passthrough], [
-            declare: fn _chan, _name, _type, _opts -> :ok end
-          ]},
-          {AMQP.Queue, [:passthrough], [
-            declare: fn _chan, _name, _opts -> {:ok, %{}} end,
-            bind: fn _chan, _queue, _exchange, _opts -> :ok end
-          ]}
+          {MessageContext, [:passthrough],
+           [
+             direct_exchange_name: fn ^broker -> direct_exchange end,
+             command_queue_name: fn ^broker -> command_queue end,
+             with_dlq_retry: fn ^broker -> true end,
+             retry_delay: fn ^broker -> retry_delay end
+           ]},
+          {AMQP.Exchange, [:passthrough],
+           [
+             declare: fn _chan, _name, _type, _opts -> :ok end
+           ]},
+          {AMQP.Queue, [:passthrough],
+           [
+             declare: fn _chan, _name, _opts -> {:ok, %{}} end,
+             bind: fn _chan, _queue, _exchange, _opts -> :ok end
+           ]}
         ]) do
           CommandListener.create_topology(chan, state)
 
@@ -312,14 +349,16 @@ defmodule CommandListenerTest do
       state = %{broker: broker, prefetch_count: 5, queue_name: "test.queue"}
 
       with_mocks([
-        {MessageContext, [:passthrough], [
-          direct_exchange_name: fn ^broker -> "test.exchange" end,
-          command_queue_name: fn ^broker -> "test.queue" end,
-          with_dlq_retry: fn ^broker -> false end
-        ]},
-        {AMQP.Exchange, [:passthrough], [
-          declare: fn _chan, _name, _type, _opts -> {:error, :channel_closed} end
-        ]}
+        {MessageContext, [:passthrough],
+         [
+           direct_exchange_name: fn ^broker -> "test.exchange" end,
+           command_queue_name: fn ^broker -> "test.queue" end,
+           with_dlq_retry: fn ^broker -> false end
+         ]},
+        {AMQP.Exchange, [:passthrough],
+         [
+           declare: fn _chan, _name, _type, _opts -> {:error, :channel_closed} end
+         ]}
       ]) do
         assert_raise MatchError, fn ->
           CommandListener.create_topology(chan, state)
@@ -335,17 +374,20 @@ defmodule CommandListenerTest do
       state = %{broker: broker, prefetch_count: 5, queue_name: "test.queue"}
 
       with_mocks([
-        {MessageContext, [:passthrough], [
-          direct_exchange_name: fn ^broker -> "test.exchange" end,
-          command_queue_name: fn ^broker -> "test.queue" end,
-          with_dlq_retry: fn ^broker -> false end
-        ]},
-        {AMQP.Exchange, [:passthrough], [
-          declare: fn _chan, _name, _type, _opts -> :ok end
-        ]},
-        {AMQP.Queue, [:passthrough], [
-          declare: fn _chan, _name, _opts -> {:error, :queue_already_exists} end
-        ]}
+        {MessageContext, [:passthrough],
+         [
+           direct_exchange_name: fn ^broker -> "test.exchange" end,
+           command_queue_name: fn ^broker -> "test.queue" end,
+           with_dlq_retry: fn ^broker -> false end
+         ]},
+        {AMQP.Exchange, [:passthrough],
+         [
+           declare: fn _chan, _name, _type, _opts -> :ok end
+         ]},
+        {AMQP.Queue, [:passthrough],
+         [
+           declare: fn _chan, _name, _opts -> {:error, :queue_already_exists} end
+         ]}
       ]) do
         assert_raise MatchError, fn ->
           CommandListener.create_topology(chan, state)
@@ -359,19 +401,22 @@ defmodule CommandListenerTest do
       state = %{broker: broker, prefetch_count: 5, queue_name: "test.queue"}
 
       with_mocks([
-        {MessageContext, [:passthrough], [
-          direct_exchange_name: fn ^broker -> "test.exchange" end,
-          command_queue_name: fn ^broker -> "test.queue" end,
-          with_dlq_retry: fn ^broker -> true end,
-          retry_delay: fn ^broker -> 5000 end
-        ]},
-        {AMQP.Exchange, [:passthrough], [
-          declare: fn _chan, _name, _type, _opts -> :error end
-        ]},
-        {AMQP.Queue, [:passthrough], [
-          declare: fn _chan, _name, _opts -> {:ok, %{}} end,
-          bind: fn _chan, _queue, _exchange, _opts -> :ok end
-        ]}
+        {MessageContext, [:passthrough],
+         [
+           direct_exchange_name: fn ^broker -> "test.exchange" end,
+           command_queue_name: fn ^broker -> "test.queue" end,
+           with_dlq_retry: fn ^broker -> true end,
+           retry_delay: fn ^broker -> 5000 end
+         ]},
+        {AMQP.Exchange, [:passthrough],
+         [
+           declare: fn _chan, _name, _type, _opts -> :error end
+         ]},
+        {AMQP.Queue, [:passthrough],
+         [
+           declare: fn _chan, _name, _opts -> {:ok, %{}} end,
+           bind: fn _chan, _queue, _exchange, _opts -> :ok end
+         ]}
       ]) do
         assert_raise MatchError, fn ->
           CommandListener.create_topology(chan, state)
@@ -390,34 +435,40 @@ defmodule CommandListenerTest do
       direct_exchange = "integration.commands.exchange"
 
       with_mocks([
-        {MessageContext, [:passthrough], [
-          handlers: fn ^broker -> %{command_listeners: handlers} end,
-          command_queue_name: fn ^broker -> queue_name end,
-          prefetch_count: fn ^broker -> prefetch_count end,
-          direct_exchange_name: fn ^broker -> direct_exchange end,
-          with_dlq_retry: fn ^broker -> false end
-        ]},
-        {ListenersValidator, [:passthrough], [
-          has_handlers: fn ^handlers -> true end
-        ]},
-        {AMQP.Exchange, [:passthrough], [
-          declare: fn _chan, _name, _type, _opts -> :ok end
-        ]},
-        {AMQP.Queue, [:passthrough], [
-          declare: fn _chan, _name, _opts -> {:ok, %{}} end,
-          bind: fn _chan, _queue, _exchange, _opts -> :ok end
-        ]}
+        {MessageContext, [:passthrough],
+         [
+           handlers: fn ^broker -> %{command_listeners: handlers} end,
+           command_queue_name: fn ^broker -> queue_name end,
+           prefetch_count: fn ^broker -> prefetch_count end,
+           direct_exchange_name: fn ^broker -> direct_exchange end,
+           with_dlq_retry: fn ^broker -> false end
+         ]},
+        {ListenersValidator, [:passthrough],
+         [
+           has_handlers: fn ^handlers -> true end
+         ]},
+        {AMQP.Exchange, [:passthrough],
+         [
+           declare: fn _chan, _name, _type, _opts -> :ok end
+         ]},
+        {AMQP.Queue, [:passthrough],
+         [
+           declare: fn _chan, _name, _opts -> {:ok, %{}} end,
+           bind: fn _chan, _queue, _exchange, _opts -> :ok end
+         ]}
       ]) do
         assert CommandListener.should_listen(broker) == true
 
         assert CommandListener.get_handlers(broker) == handlers
 
         state = CommandListener.initial_state(broker)
+
         expected_state = %{
           prefetch_count: prefetch_count,
           queue_name: queue_name,
           broker: broker
         }
+
         assert state == expected_state
 
         result = CommandListener.create_topology(chan, state)
@@ -445,24 +496,28 @@ defmodule CommandListenerTest do
       retry_delay = 7000
 
       with_mocks([
-        {MessageContext, [:passthrough], [
-          handlers: fn ^broker -> %{command_listeners: handlers} end,
-          command_queue_name: fn ^broker -> queue_name end,
-          prefetch_count: fn ^broker -> prefetch_count end,
-          direct_exchange_name: fn ^broker -> direct_exchange end,
-          with_dlq_retry: fn ^broker -> true end,
-          retry_delay: fn ^broker -> retry_delay end
-        ]},
-        {ListenersValidator, [:passthrough], [
-          has_handlers: fn ^handlers -> true end
-        ]},
-        {AMQP.Exchange, [:passthrough], [
-          declare: fn _chan, _name, _type, _opts -> :ok end
-        ]},
-        {AMQP.Queue, [:passthrough], [
-          declare: fn _chan, _name, _opts -> {:ok, %{}} end,
-          bind: fn _chan, _queue, _exchange, _opts -> :ok end
-        ]}
+        {MessageContext, [:passthrough],
+         [
+           handlers: fn ^broker -> %{command_listeners: handlers} end,
+           command_queue_name: fn ^broker -> queue_name end,
+           prefetch_count: fn ^broker -> prefetch_count end,
+           direct_exchange_name: fn ^broker -> direct_exchange end,
+           with_dlq_retry: fn ^broker -> true end,
+           retry_delay: fn ^broker -> retry_delay end
+         ]},
+        {ListenersValidator, [:passthrough],
+         [
+           has_handlers: fn ^handlers -> true end
+         ]},
+        {AMQP.Exchange, [:passthrough],
+         [
+           declare: fn _chan, _name, _type, _opts -> :ok end
+         ]},
+        {AMQP.Queue, [:passthrough],
+         [
+           declare: fn _chan, _name, _opts -> {:ok, %{}} end,
+           bind: fn _chan, _queue, _exchange, _opts -> :ok end
+         ]}
       ]) do
         assert CommandListener.should_listen(broker) == true
         assert CommandListener.get_handlers(broker) == handlers
@@ -476,8 +531,15 @@ defmodule CommandListenerTest do
 
         assert_called(AMQP.Exchange.declare(chan, direct_exchange, :direct, durable: true))
         assert_called(AMQP.Exchange.declare(chan, dlq_exchange, :direct, durable: true))
-        assert_called(AMQP.Queue.declare(chan, queue_name, durable: true, arguments: expected_args))
-        assert_called(AMQP.Queue.bind(chan, queue_name <> ".DLQ", dlq_exchange, routing_key: queue_name))
+
+        assert_called(
+          AMQP.Queue.declare(chan, queue_name, durable: true, arguments: expected_args)
+        )
+
+        assert_called(
+          AMQP.Queue.bind(chan, queue_name <> ".DLQ", dlq_exchange, routing_key: queue_name)
+        )
+
         assert_called(AMQP.Queue.bind(chan, queue_name, direct_exchange, routing_key: queue_name))
       end
     end

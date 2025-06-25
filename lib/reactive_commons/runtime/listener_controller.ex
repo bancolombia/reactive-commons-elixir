@@ -47,6 +47,6 @@ defmodule ListenerController do
     DynamicSupervisor.start_child(get_name(broker), {CommandListener, broker})
   end
 
-  defp build_name(broker), do: :"listener_controller_#{broker}"
-  defp get_name(broker), do: :"dynamic_supervisor_#{broker}"
+  defp build_name(broker), do: String.to_existing_atom("listener_controller_#{broker}")
+  defp get_name(broker), do: String.to_existing_atom("dynamic_supervisor_#{broker}")
 end

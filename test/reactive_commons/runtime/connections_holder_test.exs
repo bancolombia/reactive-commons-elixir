@@ -11,7 +11,7 @@ defmodule ConnectionsHolderTest do
   }
 
   setup do
-    case Process.whereis(String.to_atom("connections_holder_#{@broker}")) do
+    case Process.whereis(String.to_existing_atom("connections_holder_#{@broker}")) do
       nil -> :ok
       pid -> GenServer.stop(pid)
     end
@@ -21,17 +21,14 @@ defmodule ConnectionsHolderTest do
 
   describe "start_link/1" do
     test "starts the GenServer with correct name" do
-      with_mock MessageContext, [:passthrough], [
+      with_mock MessageContext, [:passthrough],
         config: fn @broker ->
           %{
             connection_props: @connection_props,
             connection_assignation: @connection_assignation
           }
-        end
-      ] do
-        with_mock RabbitConnection, [:passthrough], [
-          start_link: fn _opts -> {:ok, self()} end
-        ] do
+        end do
+        with_mock RabbitConnection, [:passthrough], start_link: fn _opts -> {:ok, self()} end do
           assert {:ok, pid} = ConnectionsHolder.start_link(@broker)
           assert is_pid(pid)
           assert Process.alive?(pid)
@@ -47,17 +44,14 @@ defmodule ConnectionsHolderTest do
 
   describe "init/1" do
     test "initializes state correctly" do
-      with_mock MessageContext, [:passthrough], [
+      with_mock MessageContext, [:passthrough],
         config: fn @broker ->
           %{
             connection_props: @connection_props,
             connection_assignation: @connection_assignation
           }
-        end
-      ] do
-        with_mock RabbitConnection, [:passthrough], [
-          start_link: fn _opts -> {:ok, self()} end
-        ] do
+        end do
+        with_mock RabbitConnection, [:passthrough], start_link: fn _opts -> {:ok, self()} end do
           {:ok, pid} = ConnectionsHolder.start_link(@broker)
 
           :timer.sleep(100)
@@ -75,22 +69,19 @@ defmodule ConnectionsHolderTest do
     end
 
     test "sends :init_connections message to self" do
-      with_mock MessageContext, [:passthrough], [
+      with_mock MessageContext, [:passthrough],
         config: fn @broker ->
           %{
             connection_props: @connection_props,
             connection_assignation: @connection_assignation
           }
-        end
-      ] do
-        with_mock RabbitConnection, [:passthrough], [
-          start_link: fn _opts -> {:ok, self()} end
-        ] do
+        end do
+        with_mock RabbitConnection, [:passthrough], start_link: fn _opts -> {:ok, self()} end do
           {:ok, pid} = ConnectionsHolder.start_link(@broker)
 
           :timer.sleep(100)
 
-          assert called RabbitConnection.start_link(:_)
+          assert called(RabbitConnection.start_link(:_))
 
           GenServer.stop(pid)
         end
@@ -100,17 +91,14 @@ defmodule ConnectionsHolderTest do
 
   describe "get_connection_async/2" do
     setup do
-      with_mock MessageContext, [:passthrough], [
+      with_mock MessageContext, [:passthrough],
         config: fn @broker ->
           %{
             connection_props: @connection_props,
             connection_assignation: @connection_assignation
           }
-        end
-      ] do
-        with_mock RabbitConnection, [:passthrough], [
-          start_link: fn _opts -> {:ok, self()} end
-        ] do
+        end do
+        with_mock RabbitConnection, [:passthrough], start_link: fn _opts -> {:ok, self()} end do
           {:ok, pid} = ConnectionsHolder.start_link(@broker)
           :timer.sleep(100)
 
@@ -149,17 +137,14 @@ defmodule ConnectionsHolderTest do
 
   describe "handle_info/2 - :send_connection" do
     setup do
-      with_mock MessageContext, [:passthrough], [
+      with_mock MessageContext, [:passthrough],
         config: fn @broker ->
           %{
             connection_props: @connection_props,
             connection_assignation: @connection_assignation
           }
-        end
-      ] do
-        with_mock RabbitConnection, [:passthrough], [
-          start_link: fn _opts -> {:ok, self()} end
-        ] do
+        end do
+        with_mock RabbitConnection, [:passthrough], start_link: fn _opts -> {:ok, self()} end do
           {:ok, pid} = ConnectionsHolder.start_link(@broker)
           :timer.sleep(100)
 
@@ -179,17 +164,14 @@ defmodule ConnectionsHolderTest do
 
   describe "handle_info/2 - :connected" do
     setup do
-      with_mock MessageContext, [:passthrough], [
+      with_mock MessageContext, [:passthrough],
         config: fn @broker ->
           %{
             connection_props: @connection_props,
             connection_assignation: @connection_assignation
           }
-        end
-      ] do
-        with_mock RabbitConnection, [:passthrough], [
-          start_link: fn _opts -> {:ok, self()} end
-        ] do
+        end do
+        with_mock RabbitConnection, [:passthrough], start_link: fn _opts -> {:ok, self()} end do
           {:ok, pid} = ConnectionsHolder.start_link(@broker)
           :timer.sleep(100)
 
@@ -216,27 +198,25 @@ defmodule ConnectionsHolderTest do
 
   describe "handle_info/2 - :init_connections" do
     test "starts connections for all configured connections" do
-      with_mock MessageContext, [:passthrough], [
+      with_mock MessageContext, [:passthrough],
         config: fn @broker ->
           %{
             connection_props: @connection_props,
             connection_assignation: @connection_assignation
           }
-        end
-      ] do
-        with_mock RabbitConnection, [:passthrough], [
+        end do
+        with_mock RabbitConnection, [:passthrough],
           start_link: fn opts ->
             assert opts[:connection_props] == @connection_props
             assert is_atom(opts[:name])
             assert is_pid(opts[:parent_pid])
             {:ok, self()}
-          end
-        ] do
+          end do
           {:ok, pid} = ConnectionsHolder.start_link(@broker)
 
           :timer.sleep(100)
 
-          assert called RabbitConnection.start_link(:_)
+          assert called(RabbitConnection.start_link(:_))
 
           GenServer.stop(pid)
         end
@@ -246,17 +226,14 @@ defmodule ConnectionsHolderTest do
 
   describe "private functions behavior" do
     test "build_name/1 creates correct atom" do
-      with_mock MessageContext, [:passthrough], [
+      with_mock MessageContext, [:passthrough],
         config: fn @broker ->
           %{
             connection_props: @connection_props,
             connection_assignation: @connection_assignation
           }
-        end
-      ] do
-        with_mock RabbitConnection, [:passthrough], [
-          start_link: fn _opts -> {:ok, self()} end
-        ] do
+        end do
+        with_mock RabbitConnection, [:passthrough], start_link: fn _opts -> {:ok, self()} end do
           {:ok, pid} = ConnectionsHolder.start_link(@broker)
 
           expected_name = String.to_atom("connections_holder_#{@broker}")
@@ -268,17 +245,14 @@ defmodule ConnectionsHolderTest do
     end
 
     test "extract_module_from_name/1 works correctly" do
-      with_mock MessageContext, [:passthrough], [
+      with_mock MessageContext, [:passthrough],
         config: fn @broker ->
           %{
             connection_props: @connection_props,
             connection_assignation: %{TestComponent: :test_connection}
           }
-        end
-      ] do
-        with_mock RabbitConnection, [:passthrough], [
-          start_link: fn _opts -> {:ok, self()} end
-        ] do
+        end do
+        with_mock RabbitConnection, [:passthrough], start_link: fn _opts -> {:ok, self()} end do
           {:ok, pid} = ConnectionsHolder.start_link(@broker)
           :timer.sleep(100)
 
@@ -296,17 +270,14 @@ defmodule ConnectionsHolderTest do
 
   describe "error handling" do
     test "handles missing configuration gracefully" do
-      with_mock MessageContext, [:passthrough], [
+      with_mock MessageContext, [:passthrough],
         config: fn @broker ->
           %{
             connection_props: nil,
             connection_assignation: %{}
           }
-        end
-      ] do
-        with_mock RabbitConnection, [:passthrough], [
-          start_link: fn _opts -> {:ok, self()} end
-        ] do
+        end do
+        with_mock RabbitConnection, [:passthrough], start_link: fn _opts -> {:ok, self()} end do
           assert {:ok, pid} = ConnectionsHolder.start_link(@broker)
 
           state = :sys.get_state(pid)
@@ -319,23 +290,20 @@ defmodule ConnectionsHolderTest do
     end
 
     test "handles RabbitConnection start failure" do
-      with_mock MessageContext, [:passthrough], [
+      with_mock MessageContext, [:passthrough],
         config: fn @broker ->
           %{
             connection_props: @connection_props,
             connection_assignation: @connection_assignation
           }
-        end
-      ] do
-        with_mock RabbitConnection, [:passthrough], [
-          start_link: fn _opts -> {:error, :connection_failed} end
-        ] do
-
+        end do
+        with_mock RabbitConnection, [:passthrough],
+          start_link: fn _opts -> {:error, :connection_failed} end do
           assert {:ok, pid} = ConnectionsHolder.start_link(@broker)
 
           :timer.sleep(100)
 
-          assert called RabbitConnection.start_link(:_)
+          assert called(RabbitConnection.start_link(:_))
 
           GenServer.stop(pid)
         end

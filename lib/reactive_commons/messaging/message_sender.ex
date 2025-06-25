@@ -16,45 +16,49 @@ defmodule MessageSender do
     {:ok, %__MODULE__{chan: nil, conn: nil, broker: broker}}
   end
 
-  def send_message(%OutMessage{} = message, broker) do
+  def send_message(message = %OutMessage{}, broker) do
     GenServer.call(build_name(__MODULE__, broker), message)
   end
 
   @impl true
-  def handle_call(%OutMessage{} = message, from, %{chan: nil} = state) do
+  def handle_call(message = %OutMessage{}, from, state = %{chan: nil}) do
     Process.send_after(self(), {:retry, message, from, 0}, 750)
     {:noreply, state}
   end
 
   @impl true
-  def handle_call(%OutMessage{} = message, from, %{chan: chan, broker: broker} = state) do
+  def handle_call(message = %OutMessage{}, from, state = %{chan: chan, broker: broker}) do
     publish(message, chan, from, broker)
     {:reply, :ok, state}
   end
 
   @impl true
-  def handle_info({:connected, conn}, %{broker: broker} =state) do
+  def handle_info({:connected, conn}, state = %{broker: broker}) do
     {:ok, chan} = AMQP.Channel.open(conn)
     create_topology(chan, broker)
     {:noreply, %{state | chan: chan, conn: conn}}
   end
 
   @impl true
-  def handle_info({:retry, %OutMessage{} = message, from, count}, %{chan: nil} = state) do
+  def handle_info({:retry, %OutMessage{} = message, from, count}, state = %{chan: nil}) do
     if count < 4 do
       Process.send_after(self(), {:retry, message, from, count + 1}, 750)
     end
+
     {:noreply, state}
   end
 
   @impl true
-  def handle_info({:retry, %OutMessage{} = message, from, _count}, %{chan: chan, broker: broker} = state) do
+  def handle_info(
+        {:retry, message = %OutMessage{}, from, _count},
+        state = %{chan: chan, broker: broker}
+      ) do
     publish(message, chan, from, broker)
     GenServer.reply(from, :ok)
     {:noreply, state}
   end
 
-  defp publish(%OutMessage{} = message, chan, from, broker) do
+  defp publish(message = %OutMessage{}, chan, from, broker) do
     options = [
       headers: SpanUtils.inject(message.headers, from),
       content_encoding: message.content_encoding,
@@ -64,6 +68,7 @@ defmodule MessageSender do
       message_id: UUID.uuid4(),
       app_id: MessageContext.config(broker).application_name
     ]
+
     result =
       AMQP.Basic.publish(
         chan,
@@ -72,6 +77,7 @@ defmodule MessageSender do
         message.payload,
         options
       )
+
     send_telemetry(System.monotonic_time(), message, options, result, from)
     result
   end
@@ -111,6 +117,6 @@ defmodule MessageSender do
     |> List.last()
     |> Macro.underscore()
     |> Kernel.<>("_" <> to_string(broker))
-    |> String.to_atom()
+    |> String.to_existing_atom()
   end
 end

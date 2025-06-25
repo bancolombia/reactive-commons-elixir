@@ -32,7 +32,8 @@ defmodule QueryExecutor do
   defp build_headers(broker, correlation_id) do
     [
       {MessageHeaders.h_correlation_id(), :longstr, correlation_id},
-      {MessageHeaders.h_source_application(), :longstr, MessageContext.config(broker).application_name}
+      {MessageHeaders.h_source_application(), :longstr,
+       MessageContext.config(broker).application_name}
     ]
   end
 end

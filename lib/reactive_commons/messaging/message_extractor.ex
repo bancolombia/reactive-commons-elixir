@@ -205,6 +205,6 @@ defmodule MessageExtractor do
     |> List.last()
     |> Macro.underscore()
     |> Kernel.<>("_" <> to_string(broker))
-    |> String.to_atom()
+    |> String.to_existing_atom()
   end
 end
