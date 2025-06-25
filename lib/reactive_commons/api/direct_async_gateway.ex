@@ -1,6 +1,6 @@
 defmodule DirectAsyncGateway do
   @moduledoc """
-    This module allows the commands emission and async queries requests.
+   This module allows the commands emission and async queries requests.
   """
 
   def request_reply(%AsyncQuery{}, nil), do: raise("nil target")

@@ -1,6 +1,6 @@
 defmodule DomainEventBus do
   @moduledoc """
-    This module allows the domain events emission.
+   This module allows the domain events emission.
   """
 
   def emit(event = %DomainEvent{name: _name}), do: emit(:app, event)

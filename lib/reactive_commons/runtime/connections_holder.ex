@@ -46,8 +46,7 @@ defmodule ConnectionsHolder do
     |> Atom.to_string()
     |> String.split("_")
     |> Enum.drop(-1)
-    |> Enum.map(&String.capitalize/1)
-    |> Enum.map_join()
+    |> Enum.map_join(&String.capitalize/1)
     |> String.to_existing_atom()
   end
 
