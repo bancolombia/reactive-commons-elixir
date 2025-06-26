@@ -47,7 +47,7 @@ defmodule ConnectionsHolder do
     |> String.split("_")
     |> Enum.drop(-1)
     |> Enum.map_join(&String.capitalize/1)
-    |> String.to_existing_atom()
+    |> String.to_atom()
   end
 
   @impl true
@@ -125,5 +125,5 @@ defmodule ConnectionsHolder do
     |> String.to_atom()
   end
 
-  defp build_name(broker), do: String.to_existing_atom("connections_holder_#{broker}")
+  defp build_name(broker), do: String.to_atom("connections_holder_#{broker}")
 end

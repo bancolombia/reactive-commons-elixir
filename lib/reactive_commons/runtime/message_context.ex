@@ -157,5 +157,5 @@ defmodule MessageContext do
     :ets.tab2list(ets_table_name(broker))
   end
 
-  defp build_name(broker), do: String.to_existing_atom("msg_ctx_#{broker}")
+  defp build_name(broker), do: String.to_atom("msg_ctx_#{broker}")
 end
