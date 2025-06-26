@@ -34,9 +34,11 @@ defmodule NotificationEventListener do
     {:ok, %{state | queue_name: queue_name}}
   end
 
+  @dialyzer {:nowarn_function, table_name: 1}
   defp table_name(broker),
     do: String.to_existing_atom("handler_table_#{build_name(__MODULE__, broker)}")
 
+  @dialyzer {:nowarn_function, build_name: 2}
   defp build_name(module, broker) do
     module
     |> Atom.to_string()
