@@ -160,8 +160,6 @@ defmodule GenericListener do
         GenServer.cast(build_name(__MODULE__, broker), {:save_handlers, get_handlers(broker)})
       end
 
-      defp create_ets(nil, _), do: :ok
-
       defoverridable consume: 3, get_handlers: 1
     end
   end
