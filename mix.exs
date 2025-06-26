@@ -28,10 +28,7 @@ defmodule ReactiveCommons.MixProject do
       deps: deps(),
       package: package(),
       description: description(),
-      source_url: "https://github.com/bancolombia/reactive-commons-elixir",
-      dialyzer: [
-        ignore_warnings: ".dialyzer_ignore.exs"
-      ]
+      source_url: "https://github.com/bancolombia/reactive-commons-elixir"
     ]
   end
 
