@@ -122,7 +122,7 @@ defmodule ConnectionsHolder do
     |> List.last()
     |> Macro.underscore()
     |> Kernel.<>("_" <> to_string(broker))
-    |> String.to_existing_atom()
+    |> String.to_atom()
   end
 
   defp build_name(broker), do: String.to_existing_atom("connections_holder_#{broker}")

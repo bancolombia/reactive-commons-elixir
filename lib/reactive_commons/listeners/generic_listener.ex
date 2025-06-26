@@ -143,7 +143,7 @@ defmodule GenericListener do
       end
 
       defp table_name(broker),
-        do: String.to_existing_atom("handler_table_#{build_name(__MODULE__, broker)}")
+        do: String.to_atom("handler_table_#{build_name(__MODULE__, broker)}")
 
       defp build_name(module, broker) do
         module
@@ -152,7 +152,7 @@ defmodule GenericListener do
         |> List.last()
         |> Macro.underscore()
         |> Kernel.<>("_" <> to_string(broker))
-        |> String.to_existing_atom()
+        |> String.to_atom()
       end
 
       defp create_ets(table_name, broker) do

@@ -41,7 +41,7 @@ defmodule MessageRuntime do
     use Supervisor
 
     def start_link(config = %{broker: broker}) do
-      name = String.to_existing_atom("message_runtime_#{broker}")
+      name = String.to_atom("message_runtime_#{broker}")
       Supervisor.start_link(__MODULE__, config, name: name)
     end
 
@@ -49,13 +49,13 @@ defmodule MessageRuntime do
     def init(config = %{broker: broker, extractor_debug: true}) do
       children = [
         Supervisor.child_spec({MessageContext, config},
-          id: String.to_existing_atom("msg_ctx_#{broker}")
+          id: String.to_atom("msg_ctx_#{broker}")
         ),
         Supervisor.child_spec({ConnectionsHolder, broker},
-          id: String.to_existing_atom("connections_holder_#{broker}")
+          id: String.to_atom("connections_holder_#{broker}")
         ),
         Supervisor.child_spec({MessageExtractor, broker},
-          id: String.to_existing_atom("message_extractor_#{broker}")
+          id: String.to_atom("message_extractor_#{broker}")
         )
       ]
 
@@ -66,22 +66,22 @@ defmodule MessageRuntime do
     def init(config = %{broker: broker}) do
       children = [
         Supervisor.child_spec({MessageContext, config},
-          id: String.to_existing_atom("msg_ctx_#{broker}")
+          id: String.to_atom("msg_ctx_#{broker}")
         ),
         Supervisor.child_spec({ConnectionsHolder, broker},
-          id: String.to_existing_atom("connections_holder_#{broker}")
+          id: String.to_atom("connections_holder_#{broker}")
         ),
         Supervisor.child_spec({ReplyRouter, broker},
-          id: String.to_existing_atom("reply_router_#{broker}")
+          id: String.to_atom("reply_router_#{broker}")
         ),
         Supervisor.child_spec({ReplyListener, broker},
-          id: String.to_existing_atom("reply_listener_#{broker}")
+          id: String.to_atom("reply_listener_#{broker}")
         ),
         Supervisor.child_spec({MessageSender, broker},
-          id: String.to_existing_atom("message_sender_#{broker}")
+          id: String.to_atom("message_sender_#{broker}")
         ),
         Supervisor.child_spec({ListenerController, broker},
-          id: String.to_existing_atom("listener_controller_#{broker}")
+          id: String.to_atom("listener_controller_#{broker}")
         )
       ]
 

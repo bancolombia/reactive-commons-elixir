@@ -44,7 +44,7 @@ defmodule ReplyRouter do
     {:noreply, nil}
   end
 
-  defp build_name(broker), do: String.to_existing_atom("reply_router_#{broker}")
+  defp build_name(broker), do: String.to_atom("reply_router_#{broker}")
 
-  defp table_name(broker), do: String.to_existing_atom("reply_router_table_#{broker}")
+  defp table_name(broker), do: String.to_atom("reply_router_table_#{broker}")
 end

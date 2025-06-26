@@ -85,7 +85,7 @@ defmodule MessageContext do
     :ets.insert(table, {:conf, config})
   end
 
-  defp ets_table_name(broker), do: String.to_existing_atom("msg_ctx_table_#{broker}")
+  defp ets_table_name(broker), do: String.to_atom("msg_ctx_table_#{broker}")
 
   def reply_queue_name(broker), do: config(broker).reply_queue
 
