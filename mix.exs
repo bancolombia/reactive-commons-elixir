@@ -1,7 +1,7 @@
 defmodule ReactiveCommons.MixProject do
   use Mix.Project
 
-  @version "0.9.0"
+  @version "1.1.0"
 
   def project do
     [
@@ -28,7 +28,10 @@ defmodule ReactiveCommons.MixProject do
       deps: deps(),
       package: package(),
       description: description(),
-      source_url: "https://github.com/bancolombia/reactive-commons-elixir"
+      source_url: "https://github.com/bancolombia/reactive-commons-elixir",
+      dialyzer: [
+        ignore_warnings: ".dialyzer_ignore.exs"
+      ]
     ]
   end
 
