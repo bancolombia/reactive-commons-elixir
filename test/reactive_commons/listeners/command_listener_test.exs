@@ -1,8 +1,7 @@
 defmodule CommandListenerTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
   import Mock
 
-  alias ExCoveralls.Html.Safe
   alias CommandListener
   alias MessageContext
 

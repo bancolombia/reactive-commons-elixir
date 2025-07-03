@@ -53,7 +53,8 @@ defmodule EventListenerTest do
     test "returns empty list when no event listeners configured" do
       broker = :test_broker
 
-      with_mock MessageContext, [:passthrough], handlers: fn ^broker -> %{event_listeners: []} end do
+      with_mock MessageContext, [:passthrough],
+        handlers: fn ^broker -> %{event_listeners: []} end do
         result = EventListener.get_handlers(broker)
 
         assert result == []
@@ -100,6 +101,7 @@ defmodule EventListenerTest do
         queue_name: "test.event.queue",
         table: table
       }
+
       :ets.new(table, [:named_table, :public])
 
       ets_data = [
@@ -460,20 +462,18 @@ defmodule EventListenerTest do
   describe "integration tests" do
     setup do
       broker = :integration_broker
-      table = :"handler_table_event_listener_#{broker}"
-      table = :ets.new(table, [:named_table, :public])
+      table_name = :"handler_table_event_listener_#{broker}"
+      :ets.new(table_name, [:named_table, :public])
 
       ets_data = [
         {:domain1, [{"event.type1", :handler1}, {"event.type2", :handler2}]}
       ]
 
-      :ets.insert(table, ets_data)
-      %{broker: broker, table: table, table: table}
+      :ets.insert(table_name, ets_data)
+      %{broker: broker, table: table_name}
     end
 
-    test "complete workflow with DLQ and multiple event bindings" do
-      broker = :integration_broker
-      table = :event_other_integration_broker_table
+    test "complete workflow with DLQ and multiple event bindings", %{broker: broker, table: table} do
       chan = :test_channel
       handlers = [:handler1, :handler2]
       queue_name = "integration.event.queue"
@@ -481,7 +481,6 @@ defmodule EventListenerTest do
       events_exchange = "integration.events"
       app_name = "integration_app"
       retry_delay = 3000
-      :ets.new(table, [:named_table, :public])
 
       with_mocks([
         {MessageContext, [:passthrough],

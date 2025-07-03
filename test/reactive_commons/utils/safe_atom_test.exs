@@ -9,7 +9,7 @@ defmodule SafeAtomTest do
   end
 
   test "should return new atom" do
-    result = SafeAtom.to_atom("nonexistingatom")
+    result = SafeAtom.to_atom("no_existing_atom")
 
     assert is_atom(result)
   end

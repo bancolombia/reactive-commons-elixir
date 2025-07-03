@@ -32,5 +32,4 @@ defmodule NotificationEventListener do
 
     {:ok, %{state | queue_name: queue_name}}
   end
-
 end

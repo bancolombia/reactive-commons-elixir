@@ -11,7 +11,7 @@ defmodule GenericListener do
   @doc """
   Get initial state.
   """
-  @callback initial_state(String.t(), String.t()) :: map()
+  @callback initial_state(String.t(), atom()) :: map()
 
   @doc """
   Create resource topology.
@@ -28,7 +28,7 @@ defmodule GenericListener do
       @kind __MODULE__
       @executor unquote(opts[:executor])
 
-      defstruct [:conn, :chan, :queue_name, :consumer_tag, :prefetch_count, :broker]
+      defstruct [:conn, :chan, :queue_name, :consumer_tag, :prefetch_count, :broker, :table]
 
       def start_link(broker) do
         name = build_name(__MODULE__, broker)

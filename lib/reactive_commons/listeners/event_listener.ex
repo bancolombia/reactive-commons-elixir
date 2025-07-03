@@ -57,5 +57,4 @@ defmodule EventListener do
 
     {:ok, state}
   end
-
 end
