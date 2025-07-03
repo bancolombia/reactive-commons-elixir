@@ -8,8 +8,8 @@ defmodule ReplyListener do
     do: ListenersValidator.should_listen_replies(MessageContext.config(broker))
 
   @impl true
-  def initial_state(broker) do
-    %{prefetch_count: MessageContext.prefetch_count(broker), broker: broker}
+  def initial_state(broker, table) do
+    %{prefetch_count: MessageContext.prefetch_count(broker), broker: broker, table: table}
   end
 
   @impl true

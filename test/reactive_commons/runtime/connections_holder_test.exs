@@ -11,7 +11,7 @@ defmodule ConnectionsHolderTest do
   }
 
   setup do
-    case Process.whereis(String.to_existing_atom("connections_holder_#{@broker}")) do
+    case Process.whereis(SafeAtom.to_atom("connections_holder_#{@broker}")) do
       nil -> :ok
       pid -> GenServer.stop(pid)
     end
@@ -33,7 +33,7 @@ defmodule ConnectionsHolderTest do
           assert is_pid(pid)
           assert Process.alive?(pid)
 
-          expected_name = String.to_atom("connections_holder_#{@broker}")
+          expected_name = SafeAtom.to_atom("connections_holder_#{@broker}")
           assert Process.whereis(expected_name) == pid
 
           GenServer.stop(pid)
@@ -236,7 +236,7 @@ defmodule ConnectionsHolderTest do
         with_mock RabbitConnection, [:passthrough], start_link: fn _opts -> {:ok, self()} end do
           {:ok, pid} = ConnectionsHolder.start_link(@broker)
 
-          expected_name = String.to_atom("connections_holder_#{@broker}")
+          expected_name = SafeAtom.to_atom("connections_holder_#{@broker}")
           assert Process.whereis(expected_name) == pid
 
           GenServer.stop(pid)

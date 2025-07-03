@@ -11,7 +11,7 @@ defmodule GenericListener do
   @doc """
   Get initial state.
   """
-  @callback initial_state(String.t()) :: map()
+  @callback initial_state(String.t(), String.t()) :: map()
 
   @doc """
   Create resource topology.
@@ -42,8 +42,9 @@ defmodule GenericListener do
         if should_listen(broker) do
           component_name = build_name(__MODULE__, broker)
           :ok = ConnectionsHolder.get_connection_async(component_name, broker)
-          :ok = create_ets(table_name(broker), broker)
-          {:ok, struct(__MODULE__, initial_state(broker))}
+          table = table_name(broker)
+          :ok = create_ets(table, broker)
+          {:ok, struct(__MODULE__, initial_state(broker, table))}
         else
           IO.puts("########### #{@kind} LISTENER SKIPPED FOR BROKER #{broker} #############")
           :ignore
@@ -104,18 +105,18 @@ defmodule GenericListener do
       end
 
       @impl true
-      def handle_cast({:save_handlers, handlers = %{}}, state = %{broker: broker}) do
-        :ok = save_handlers(handlers, broker)
+      def handle_cast({:save_handlers, handlers = %{}}, state = %{table: table}) do
+        :ok = save_handlers(handlers, table)
         {:noreply, state}
       end
 
       def consume(
             props = %{delivery_tag: _, redelivered: _},
             payload,
-            state = %{chan: chan, broker: broker}
+            state = %{chan: chan, broker: broker, table: table}
           ) do
         message_to_handle =
-          MessageToHandle.new(props, payload, chan, table_name(broker))
+          MessageToHandle.new(props, payload, chan, table)
 
         spawn_link(@executor, :handle_message, [message_to_handle, broker])
       end
@@ -131,11 +132,11 @@ defmodule GenericListener do
         Logger.info("Stopped and deleted queue #{queue_name}")
       end
 
-      defp save_handlers(handlers, broker) do
+      defp save_handlers(handlers, table) do
         Enum.each(
           handlers,
           fn {path, handler_fn} ->
-            :ets.insert(table_name(broker), {path, handler_fn})
+            :ets.insert(table, {path, handler_fn})
           end
         )
 
@@ -143,7 +144,7 @@ defmodule GenericListener do
       end
 
       defp table_name(broker),
-        do: String.to_atom("handler_table_#{build_name(__MODULE__, broker)}")
+        do: SafeAtom.to_atom("handler_table_#{build_name(__MODULE__, broker)}")
 
       defp build_name(module, broker) do
         module
@@ -152,7 +153,7 @@ defmodule GenericListener do
         |> List.last()
         |> Macro.underscore()
         |> Kernel.<>("_" <> to_string(broker))
-        |> String.to_atom()
+        |> SafeAtom.to_atom()
       end
 
       defp create_ets(table_name, broker) do

@@ -2,6 +2,7 @@ defmodule CommandListenerTest do
   use ExUnit.Case, async: true
   import Mock
 
+  alias ExCoveralls.Html.Safe
   alias CommandListener
   alias MessageContext
 
@@ -93,18 +94,20 @@ defmodule CommandListenerTest do
   describe "initial_state/1" do
     test "returns correct initial state with all required fields" do
       broker = :test_broker
+      table = :command_test_broker_table
       queue_name = "test.command.queue"
       prefetch_count = 5
 
       with_mock MessageContext, [:passthrough],
         command_queue_name: fn ^broker -> queue_name end,
         prefetch_count: fn ^broker -> prefetch_count end do
-        result = CommandListener.initial_state(broker)
+        result = CommandListener.initial_state(broker, table)
 
         expected_state = %{
           prefetch_count: prefetch_count,
           queue_name: queue_name,
-          broker: broker
+          broker: broker,
+          table: table
         }
 
         assert result == expected_state
@@ -118,17 +121,19 @@ defmodule CommandListenerTest do
 
       Enum.each(brokers, fn broker ->
         queue_name = "command.queue.#{broker}"
+        table = SafeAtom.to_atom("command_#{broker}_table")
         prefetch_count = 1
 
         with_mock MessageContext, [:passthrough],
           command_queue_name: fn ^broker -> queue_name end,
           prefetch_count: fn ^broker -> prefetch_count end do
-          result = CommandListener.initial_state(broker)
+          result = CommandListener.initial_state(broker, table)
 
           expected_state = %{
             prefetch_count: prefetch_count,
             queue_name: queue_name,
-            broker: broker
+            broker: broker,
+            table: table
           }
 
           assert result == expected_state
@@ -428,6 +433,7 @@ defmodule CommandListenerTest do
   describe "integration tests" do
     test "complete workflow from should_listen to create_topology" do
       broker = :integration_test_broker
+      table = :command_integration_test_broker_table
       chan = :test_channel
       handlers = [:command_handler1, :command_handler2]
       queue_name = "integration.command.queue"
@@ -461,12 +467,13 @@ defmodule CommandListenerTest do
 
         assert CommandListener.get_handlers(broker) == handlers
 
-        state = CommandListener.initial_state(broker)
+        state = CommandListener.initial_state(broker, table)
 
         expected_state = %{
           prefetch_count: prefetch_count,
           queue_name: queue_name,
-          broker: broker
+          broker: broker,
+          table: table
         }
 
         assert state == expected_state
@@ -488,6 +495,7 @@ defmodule CommandListenerTest do
 
     test "complete workflow with DLQ enabled" do
       broker = :dlq_integration_broker
+      table = :command_dlq_integration_broker_table
       chan = :test_channel
       handlers = [:command_handler1]
       queue_name = "dlq.integration.command.queue"
@@ -522,7 +530,7 @@ defmodule CommandListenerTest do
         assert CommandListener.should_listen(broker) == true
         assert CommandListener.get_handlers(broker) == handlers
 
-        state = CommandListener.initial_state(broker)
+        state = CommandListener.initial_state(broker, table)
         result = CommandListener.create_topology(chan, state)
         assert result == {:ok, state}
 

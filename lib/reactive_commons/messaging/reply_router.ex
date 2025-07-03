@@ -8,8 +8,9 @@ defmodule ReplyRouter do
 
   @impl true
   def init(broker) do
-    :ets.new(table_name(broker), [:named_table, read_concurrency: true])
-    {:ok, nil}
+    table = table_name(broker)
+    :ets.new(table, [:named_table, read_concurrency: true])
+    {:ok, table}
   end
 
   def register_reply_route(broker, correlation_id, pid) do
@@ -33,18 +34,18 @@ defmodule ReplyRouter do
   end
 
   @impl true
-  def handle_call({:register, broker, correlation_id, pid}, _, _) do
-    :ets.insert(table_name(broker), {{to_string(broker), correlation_id}, pid})
-    {:reply, :ok, nil}
+  def handle_call({:register, broker, correlation_id, pid}, _, table) do
+    :ets.insert(table, {{to_string(broker), correlation_id}, pid})
+    {:reply, :ok, table}
   end
 
   @impl true
-  def handle_cast({:delete, broker, correlation_id}, _) do
-    :ets.delete(table_name(broker), {to_string(broker), correlation_id})
-    {:noreply, nil}
+  def handle_cast({:delete, broker, correlation_id}, table) do
+    :ets.delete(table, {to_string(broker), correlation_id})
+    {:noreply, table}
   end
 
-  defp build_name(broker), do: String.to_atom("reply_router_#{broker}")
+  defp build_name(broker), do: SafeAtom.to_atom("reply_router_#{broker}")
 
-  defp table_name(broker), do: String.to_atom("reply_router_table_#{broker}")
+  defp table_name(broker), do: SafeAtom.to_atom("reply_router_table_#{broker}")
 end

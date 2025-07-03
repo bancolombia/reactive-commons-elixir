@@ -65,18 +65,20 @@ defmodule QueryListenerTest do
   describe "initial_state/1" do
     test "returns correct initial state with all required fields" do
       broker = :test_broker
+      table = :query_test_broker_table
       queue_name = "test.query.queue"
       prefetch_count = 10
 
       with_mock MessageContext, [:passthrough],
         query_queue_name: fn ^broker -> queue_name end,
         prefetch_count: fn ^broker -> prefetch_count end do
-        result = QueryListener.initial_state(broker)
+        result = QueryListener.initial_state(broker, table)
 
         expected_state = %{
           prefetch_count: prefetch_count,
           queue_name: queue_name,
-          broker: broker
+          broker: broker,
+          table: table
         }
 
         assert result == expected_state
@@ -231,6 +233,7 @@ defmodule QueryListenerTest do
   describe "integration tests" do
     test "complete workflow from should_listen to create_topology" do
       broker = :integration_test_broker
+      table = :query_integration_test_broker_table
       chan = :test_channel
       handlers = [:handler1]
       queue_name = "integration.query.queue"
@@ -264,12 +267,13 @@ defmodule QueryListenerTest do
 
         assert QueryListener.get_handlers(broker) == handlers
 
-        state = QueryListener.initial_state(broker)
+        state = QueryListener.initial_state(broker, table)
 
         expected_state = %{
           prefetch_count: prefetch_count,
           queue_name: queue_name,
-          broker: broker
+          broker: broker,
+          table: table
         }
 
         assert state == expected_state

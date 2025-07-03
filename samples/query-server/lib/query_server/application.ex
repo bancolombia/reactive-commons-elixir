@@ -13,7 +13,7 @@ defmodule QueryServer.Application do
       ] ++
         Enum.map(Map.keys(async_config_map), fn broker ->
           Supervisor.child_spec({SubsConfig, :"#{broker}"},
-            id: String.to_atom("subs_config_process_#{broker}")
+            id: SafeAtom.to_atom("subs_config_process_#{broker}")
           )
         end)
 

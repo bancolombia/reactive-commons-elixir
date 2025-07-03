@@ -8,10 +8,10 @@ defmodule QueryListener do
   def get_handlers(broker), do: MessageContext.handlers(broker).query_listeners
 
   @impl true
-  def initial_state(broker) do
+  def initial_state(broker, table) do
     queue_name = MessageContext.query_queue_name(broker)
     prefetch_count = MessageContext.prefetch_count(broker)
-    %{prefetch_count: prefetch_count, queue_name: queue_name, broker: broker}
+    %{prefetch_count: prefetch_count, queue_name: queue_name, broker: broker, table: table}
   end
 
   @impl true

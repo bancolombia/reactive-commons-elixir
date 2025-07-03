@@ -65,18 +65,20 @@ defmodule EventListenerTest do
   describe "initial_state/1" do
     test "returns correct initial state with all required fields" do
       broker = :test_broker
+      table = :event_test_broker_table
       queue_name = "test.event.queue"
       prefetch_count = 15
 
       with_mock MessageContext, [:passthrough],
         event_queue_name: fn ^broker -> queue_name end,
         prefetch_count: fn ^broker -> prefetch_count end do
-        result = EventListener.initial_state(broker)
+        result = EventListener.initial_state(broker, table)
 
         expected_state = %{
           prefetch_count: prefetch_count,
           queue_name: queue_name,
-          broker: broker
+          broker: broker,
+          table: table
         }
 
         assert result == expected_state
@@ -90,15 +92,15 @@ defmodule EventListenerTest do
     setup do
       chan = :test_channel
       broker = :test_broker
+      table = :"handler_table_event_listener_#{broker}"
 
       state = %{
         broker: broker,
         prefetch_count: 10,
-        queue_name: "test.event.queue"
+        queue_name: "test.event.queue",
+        table: table
       }
-
-      table_name = :"handler_table_event_listener_#{broker}"
-      table = :ets.new(table_name, [:named_table, :public])
+      :ets.new(table, [:named_table, :public])
 
       ets_data = [
         {:user_domain,
@@ -118,7 +120,7 @@ defmodule EventListenerTest do
          ]}
       ]
 
-      :ets.insert(table_name, ets_data)
+      :ets.insert(table, ets_data)
 
       %{chan: chan, state: state, broker: broker, table: table}
     end
@@ -337,18 +339,17 @@ defmodule EventListenerTest do
     end
   end
 
-  describe "table_name/1 (private function testing through behavior)" do
+  describe "table/1 (private function testing through behavior)" do
     setup do
       broker = :test_broker
-      table_name = :"handler_table_event_listener_#{broker}"
-      :ets.new(table_name, [:named_table, :public])
-      %{broker: broker, table_name: table_name}
+      table = :"handler_table_event_listener_#{broker}"
+      :ets.new(table, [:named_table, :public])
+      %{broker: broker, table: table}
     end
 
-    test "generates correct table name format" do
-      broker = :test_broker
+    test "generates correct table name format", %{table: table, broker: broker} do
       chan = :test_channel
-      state = %{broker: broker, prefetch_count: 10, queue_name: "test.queue"}
+      state = %{broker: broker, prefetch_count: 10, queue_name: "test.queue", table: table}
 
       with_mock MessageContext, [:passthrough],
         application_name: fn ^broker -> "test_app" end,
@@ -372,9 +373,9 @@ defmodule EventListenerTest do
       brokers = [:broker1, :broker2, :custom_broker]
 
       Enum.each(brokers, fn broker ->
-        table_name = :"handler_table_event_listener_#{broker}"
-        :ets.new(table_name, [:named_table, :public])
-        %{broker: broker, table_name: table_name}
+        table = :"handler_table_event_listener_#{broker}"
+        :ets.new(table, [:named_table, :public])
+        %{broker: broker, table: table}
       end)
     end
 
@@ -383,7 +384,8 @@ defmodule EventListenerTest do
 
       Enum.each(brokers, fn broker ->
         chan = :test_channel
-        state = %{broker: broker, prefetch_count: 10, queue_name: "test.queue"}
+        table = :"handler_table_event_listener_#{broker}"
+        state = %{broker: broker, prefetch_count: 10, queue_name: "test.queue", table: table}
 
         with_mocks([
           {MessageContext, [:passthrough],
@@ -411,7 +413,7 @@ defmodule EventListenerTest do
     test "handles AMQP exchange declaration errors", %{} do
       chan = :test_channel
       broker = :test_broker
-      state = %{broker: broker, prefetch_count: 10, queue_name: "test.queue"}
+      state = %{broker: broker, prefetch_count: 10, queue_name: "test.queue", table: :test_table}
 
       with_mocks([
         {MessageContext, [:passthrough],
@@ -436,7 +438,7 @@ defmodule EventListenerTest do
     test "handles ETS table lookup errors", %{} do
       chan = :test_channel
       broker = :test_broker
-      state = %{broker: broker, prefetch_count: 10, queue_name: "test.queue"}
+      state = %{broker: broker, prefetch_count: 10, queue_name: "test.queue", table: :test_table}
 
       with_mocks([
         {MessageContext, [:passthrough],
@@ -458,19 +460,20 @@ defmodule EventListenerTest do
   describe "integration tests" do
     setup do
       broker = :integration_broker
-      table_name = :"handler_table_event_listener_#{broker}"
-      table = :ets.new(table_name, [:named_table, :public])
+      table = :"handler_table_event_listener_#{broker}"
+      table = :ets.new(table, [:named_table, :public])
 
       ets_data = [
         {:domain1, [{"event.type1", :handler1}, {"event.type2", :handler2}]}
       ]
 
-      :ets.insert(table_name, ets_data)
-      %{broker: broker, table_name: table_name, table: table}
+      :ets.insert(table, ets_data)
+      %{broker: broker, table: table, table: table}
     end
 
     test "complete workflow with DLQ and multiple event bindings" do
       broker = :integration_broker
+      table = :event_other_integration_broker_table
       chan = :test_channel
       handlers = [:handler1, :handler2]
       queue_name = "integration.event.queue"
@@ -478,6 +481,7 @@ defmodule EventListenerTest do
       events_exchange = "integration.events"
       app_name = "integration_app"
       retry_delay = 3000
+      :ets.new(table, [:named_table, :public])
 
       with_mocks([
         {MessageContext, [:passthrough],
@@ -504,12 +508,13 @@ defmodule EventListenerTest do
         assert EventListener.should_listen(broker) == true
         assert EventListener.get_handlers(broker) == handlers
 
-        state = EventListener.initial_state(broker)
+        state = EventListener.initial_state(broker, table)
 
         expected_state = %{
           prefetch_count: prefetch_count,
           queue_name: queue_name,
-          broker: broker
+          broker: broker,
+          table: table
         }
 
         assert state == expected_state

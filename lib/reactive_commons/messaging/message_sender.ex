@@ -117,6 +117,6 @@ defmodule MessageSender do
     |> List.last()
     |> Macro.underscore()
     |> Kernel.<>("_" <> to_string(broker))
-    |> String.to_existing_atom()
+    |> SafeAtom.to_atom()
   end
 end

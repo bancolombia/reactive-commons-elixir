@@ -20,7 +20,7 @@ defmodule HandlersConfig do
         }
 
   @spec new(atom() | binary() | nil) :: t
-  def new(broker) when is_binary(broker), do: %__MODULE__{broker: String.to_existing_atom(broker)}
+  def new(broker) when is_binary(broker), do: %__MODULE__{broker: SafeAtom.to_atom(broker)}
   def new(broker) when is_atom(broker), do: %__MODULE__{broker: broker}
 
   def add_listener(conf = %__MODULE__{broker: broker}, type, path, handler) do
