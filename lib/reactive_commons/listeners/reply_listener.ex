@@ -1,23 +1,26 @@
 defmodule ReplyListener do
   @moduledoc false
   use GenericListener
+  require Logger
 
   @impl true
-  def should_listen, do: ListenersValidator.should_listen_replies(MessageContext.config())
+  def should_listen(broker),
+    do: ListenersValidator.should_listen_replies(MessageContext.config(broker))
 
   @impl true
-  def initial_state do
-    %{prefetch_count: MessageContext.prefetch_count()}
+  def initial_state(broker, table) do
+    %{prefetch_count: MessageContext.prefetch_count(broker), broker: broker, table: table}
   end
 
   @impl true
   def create_topology(chan, state) do
     # Topology
+    broker = state.broker
     stop_and_delete(state)
+    queue_name = MessageContext.gen_reply_queue_name(broker)
+    exchange_name = MessageContext.reply_exchange_name(broker)
+    routing_key = MessageContext.reply_routing_key(broker)
 
-    queue_name = MessageContext.gen_reply_queue_name()
-    exchange_name = MessageContext.reply_exchange_name()
-    routing_key = MessageContext.reply_routing_key()
     # Exchange
     :ok = AMQP.Exchange.declare(chan, exchange_name, :topic, durable: true)
     # Queue
@@ -27,10 +30,10 @@ defmodule ReplyListener do
     {:ok, %{state | queue_name: queue_name}}
   end
 
-  def consume(props, payload, %{chan: chan}) do
+  def consume(props, payload, %{chan: chan, broker: broker}) do
     correlation_id = get_correlation_id(props)
     :ok = AMQP.Basic.ack(chan, props.delivery_tag)
-    result = ReplyRouter.route_reply(correlation_id, payload)
+    result = ReplyRouter.route_reply(broker, correlation_id, payload)
     :telemetry.execute([:async, :message, :replied], %{}, %{meta: props, result: result})
     result
   end

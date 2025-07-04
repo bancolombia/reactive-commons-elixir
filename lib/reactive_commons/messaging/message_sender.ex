@@ -4,21 +4,20 @@ defmodule MessageSender do
   alias ReactiveCommons.Utils.SpanUtils
   require Logger
 
-  defstruct [:chan, :conn]
+  defstruct [:chan, :conn, :broker]
 
-  def start_link(_opts) do
-    GenServer.start_link(__MODULE__, [], name: __MODULE__)
+  def start_link(broker) do
+    GenServer.start_link(__MODULE__, broker, name: build_name(__MODULE__, broker))
   end
 
   @impl true
-  def init(_) do
-    :ok = ConnectionsHolder.get_connection_async(__MODULE__)
-    {:ok, %__MODULE__{chan: nil, conn: nil}}
+  def init(broker) do
+    :ok = ConnectionsHolder.get_connection_async(build_name(__MODULE__, broker), broker)
+    {:ok, %__MODULE__{chan: nil, conn: nil, broker: broker}}
   end
 
-  def send_message(message = %OutMessage{}) do
-    # TODO: consider process pool usage
-    GenServer.call(__MODULE__, message)
+  def send_message(message = %OutMessage{}, broker) do
+    GenServer.call(build_name(__MODULE__, broker), message)
   end
 
   @impl true
@@ -28,24 +27,20 @@ defmodule MessageSender do
   end
 
   @impl true
-  def handle_call(
-        message = %OutMessage{headers: _, content_encoding: _},
-        from,
-        state = %{chan: chan}
-      ) do
-    publish(message, chan, from)
+  def handle_call(message = %OutMessage{}, from, state = %{chan: chan, broker: broker}) do
+    publish(message, chan, from, broker)
     {:reply, :ok, state}
   end
 
   @impl true
-  def handle_info({:connected, conn}, _state) do
+  def handle_info({:connected, conn}, state = %{broker: broker}) do
     {:ok, chan} = AMQP.Channel.open(conn)
-    create_topology(chan)
-    {:noreply, %__MODULE__{chan: chan, conn: conn}}
+    create_topology(chan, broker)
+    {:noreply, %{state | chan: chan, conn: conn}}
   end
 
   @impl true
-  def handle_info({:retry, message = %OutMessage{}, from, count}, state = %{chan: nil}) do
+  def handle_info({:retry, %OutMessage{} = message, from, count}, state = %{chan: nil}) do
     if count < 4 do
       Process.send_after(self(), {:retry, message, from, count + 1}, 750)
     end
@@ -54,21 +49,24 @@ defmodule MessageSender do
   end
 
   @impl true
-  def handle_info({:retry, message = %OutMessage{}, from, _count}, state = %{chan: chan}) do
-    publish(message, chan, from)
+  def handle_info(
+        {:retry, message = %OutMessage{}, from, _count},
+        state = %{chan: chan, broker: broker}
+      ) do
+    publish(message, chan, from, broker)
     GenServer.reply(from, :ok)
     {:noreply, state}
   end
 
-  defp publish(message = %OutMessage{headers: headers, content_encoding: encoding}, chan, from) do
+  defp publish(message = %OutMessage{}, chan, from, broker) do
     options = [
-      headers: SpanUtils.inject(headers, from),
-      content_encoding: encoding,
+      headers: SpanUtils.inject(message.headers, from),
+      content_encoding: message.content_encoding,
       content_type: message.content_type,
       persistent: message.persistent,
       timestamp: :os.system_time(:millisecond),
       message_id: UUID.uuid4(),
-      app_id: MessageContext.config().application_name
+      app_id: MessageContext.config(broker).application_name
     ]
 
     result =
@@ -80,14 +78,7 @@ defmodule MessageSender do
         options
       )
 
-    send_telemetry(
-      System.monotonic_time(),
-      message,
-      options,
-      result,
-      from
-    )
-
+    send_telemetry(System.monotonic_time(), message, options, result, from)
     result
   end
 
@@ -105,17 +96,27 @@ defmodule MessageSender do
     )
   end
 
-  defp create_topology(chan) do
-    opts = MessageContext.topology()
-    # Topology
+  defp create_topology(chan, broker) do
+    opts = MessageContext.topology(broker)
+
     if opts.command_sender || opts.queries_sender do
-      direct_exchange = MessageContext.direct_exchange_name()
+      direct_exchange = MessageContext.direct_exchange_name(broker)
       :ok = AMQP.Exchange.declare(chan, direct_exchange, :direct, durable: true)
     end
 
     if opts.events_sender do
-      events_exchange_name = MessageContext.events_exchange_name()
-      :ok = AMQP.Exchange.declare(chan, events_exchange_name, :topic, durable: true)
+      topic_exchange = MessageContext.events_exchange_name(broker)
+      :ok = AMQP.Exchange.declare(chan, topic_exchange, :topic, durable: true)
     end
+  end
+
+  defp build_name(module, broker) do
+    module
+    |> Atom.to_string()
+    |> String.split(".")
+    |> List.last()
+    |> Macro.underscore()
+    |> Kernel.<>("_" <> to_string(broker))
+    |> SafeAtom.to_atom()
   end
 end

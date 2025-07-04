@@ -5,50 +5,56 @@ defmodule ConnectionsHolder do
   use GenServer
   require Logger
 
-  defstruct [:connection_props, :connections, :connection_assignation]
+  defstruct [:connection_props, :connections, :connection_assignation, :broker]
 
-  def start_link(_opts) do
-    GenServer.start_link(__MODULE__, [], name: __MODULE__)
+  def start_link(broker) do
+    GenServer.start_link(__MODULE__, broker, name: build_name(broker))
   end
 
   @impl true
-  def init(_) do
-    Logger.info("ConnectionsHolder: init")
-    connection_props = MessageContext.config().connection_props
-    connection_assignation = MessageContext.config().connection_assignation
+  def init(broker) do
+    Logger.info("ConnectionsHolder: init for broker #{broker}")
+    connection_props = MessageContext.config(broker).connection_props
+    connection_assignation = MessageContext.config(broker).connection_assignation
+
     send(self(), :init_connections)
-    {:ok, initial_state(connection_props, connection_assignation)}
+    {:ok, initial_state(connection_props, connection_assignation, broker)}
   end
 
-  defp initial_state(connection_props, connection_assignation) do
+  defp initial_state(connection_props, connection_assignation, broker) do
     connections =
       connection_assignation
       |> Enum.reduce(%{}, fn {component, conn_name}, info ->
-        add_dependent_component(info, conn_name, component)
+        unique_conn_name = full_name(conn_name, broker)
+        add_dependent_component(info, unique_conn_name, component)
       end)
 
     %__MODULE__{
       connection_props: connection_props,
       connections: connections,
-      connection_assignation: connection_assignation
+      connection_assignation: connection_assignation,
+      broker: broker
     }
   end
 
-  def get_connection_async(component_name) do
-    GenServer.call(__MODULE__, {:get_connection, normalize(component_name), self()})
+  def get_connection_async(component_name, broker) do
+    GenServer.call(build_name(broker), {:get_connection, component_name, self()})
   end
 
-  defp normalize(component_name) do
-    Atom.to_string(component_name) |> String.split(".") |> Enum.at(1) |> String.to_atom()
+  defp extract_module_from_name(component_name) do
+    component_name
+    |> Atom.to_string()
+    |> String.split("_")
+    |> Enum.drop(-1)
+    |> Enum.map_join(&String.capitalize/1)
+    |> SafeAtom.to_atom()
   end
 
   @impl true
-  def handle_call(
-        {:get_connection, component_name, pid},
-        _from,
-        state = %__MODULE__{connection_assignation: connection_assignation}
-      ) do
-    if Map.has_key?(connection_assignation, component_name) do
+  def handle_call({:get_connection, component_name, pid}, _from, state) do
+    component = extract_module_from_name(component_name)
+
+    if Map.has_key?(state.connection_assignation, component) do
       send(self(), {:send_connection, pid, component_name})
       {:reply, :ok, state}
     else
@@ -57,16 +63,11 @@ defmodule ConnectionsHolder do
   end
 
   @impl true
-  def handle_info(
-        {:send_connection, pid, component_name},
-        state = %__MODULE__{
-          connections: connections,
-          connection_assignation: connection_assignation
-        }
-      ) do
-    conn_name = Map.get(connection_assignation, component_name)
+  def handle_info({:send_connection, pid, component_name}, state) do
+    component = extract_module_from_name(component_name)
+    conn_name = full_name(Map.get(state.connection_assignation, component), state.broker)
 
-    case Map.get(connections, conn_name) do
+    case Map.get(state.connections, conn_name) do
       %{conn_ref: conn_ref} -> send(pid, {:connected, conn_ref})
       _conn_info -> Process.send_after(self(), {:send_connection, pid, component_name}, 750)
     end
@@ -75,39 +76,54 @@ defmodule ConnectionsHolder do
   end
 
   @impl true
-  def handle_info(
-        :init_connections,
-        state = %__MODULE__{connection_props: connection_props, connections: connections}
-      ) do
-    for {conn_name, _info} <- connections, do: start_connection(conn_name, connection_props)
+  def handle_info(:init_connections, state) do
+    Enum.each(state.connections, fn {conn_name, _info} ->
+      start_connection(conn_name, state)
+    end)
+
     {:noreply, state}
   end
 
   @impl true
-  def handle_info({:connected, name, conn}, state = %__MODULE__{connections: connections}) do
-    connections = put_conn_ref(connections, name, conn)
+  def handle_info({:connected, conn_name, conn_ref}, state) do
+    connections =
+      Map.update(
+        state.connections,
+        conn_name,
+        %{conn_ref: conn_ref},
+        fn info -> Map.put(info, :conn_ref, conn_ref) end
+      )
+
     {:noreply, %{state | connections: connections}}
   end
 
-  defp put_conn_ref(connections, conn_name, conn_ref) do
-    connection_info = Map.get(connections, conn_name)
-    Map.put(connections, conn_name, Map.put(connection_info, :conn_ref, conn_ref))
-  end
-
-  defp start_connection(name, connection_props) do
+  defp start_connection(name, state) do
     RabbitConnection.start_link(
-      connection_props: connection_props,
+      connection_props: state.connection_props,
       name: name,
       parent_pid: self()
     )
   end
 
   defp add_dependent_component(connections_info = %{}, conn_name, component) do
-    connections_info
-    |> Map.update(conn_name, %{dependent_components: [component]}, fn info ->
+    Map.update(connections_info, conn_name, %{dependent_components: [component]}, fn info ->
       add_in_list(info, :dependent_components, component)
     end)
   end
 
-  defp add_in_list(map = %{}, path, value), do: map |> Map.put(path, [value | Map.get(map, path)])
+  defp add_in_list(map = %{}, path, value) do
+    Map.put(map, path, [value | Map.get(map, path)])
+  end
+
+  defp full_name(name, broker) do
+    name
+    |> Atom.to_string()
+    |> String.split(".")
+    |> List.last()
+    |> Macro.underscore()
+    |> Kernel.<>("_" <> to_string(broker))
+    |> SafeAtom.to_atom()
+  end
+
+  defp build_name(broker), do: SafeAtom.to_atom("connections_holder_#{broker}")
 end

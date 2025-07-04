@@ -22,7 +22,7 @@ defmodule GenericExecutor do
   @doc """
   It's called when handler return (optional).
   """
-  @callback on_post_process(handler_response(), MessageToHandle.t()) :: any()
+  @callback on_post_process(handler_response(), MessageToHandle.t(), String.t()) :: any()
 
   defmacro __using__(opts) do
     quote do
@@ -31,7 +31,8 @@ defmodule GenericExecutor do
       @message_type unquote(opts[:type])
 
       def handle_message(
-            msg = %MessageToHandle{delivery_tag: tag, chan: chan, handlers_ref: table}
+            msg = %MessageToHandle{delivery_tag: tag, chan: chan, handlers_ref: table},
+            broker
           ) do
         t0 = :erlang.monotonic_time()
 
@@ -40,9 +41,10 @@ defmodule GenericExecutor do
         try do
           event = decode(msg)
           handler_path = get_handler_path(msg, event)
-          [{_path, handler_fn}] = :ets.lookup(table, handler_path)
+          [{_broker, handler_map}] = :ets.lookup(table, broker)
+          handler_fn = Map.fetch!(handler_map, handler_path)
           handler_result = handler_fn.(event)
-          on_post_process(handler_result, msg)
+          on_post_process(handler_result, msg, broker)
           report_to_telemetry(msg, @message_type, handler_path, calc_duration(t0), :success)
           :ok = ack(chan, tag)
         catch
@@ -50,7 +52,7 @@ defmodule GenericExecutor do
             duration = calc_duration(t0)
             error_info = {info, error, duration, __STACKTRACE__}
             report_error_to_telemetry(msg, duration)
-            requeue_or_ack(msg, error_info, @message_type)
+            requeue_or_ack(msg, error_info, @message_type, broker)
         end
       end
 
@@ -71,9 +73,9 @@ defmodule GenericExecutor do
         Poison.decode!(payload)
       end
 
-      def on_post_process(_, _), do: :noop
+      def on_post_process(_, _, _), do: :noop
 
-      defoverridable decode: 1, on_post_process: 2
+      defoverridable decode: 1, on_post_process: 3
     end
   end
 
@@ -89,16 +91,17 @@ defmodule GenericExecutor do
           redelivered: redelivered
         },
         error_info,
-        msg_type
+        msg_type,
+        broker
       ) do
     num = HeaderExtractor.get_x_death_count(headers)
     is_redelivered = redelivered || num > 0
     send_error_to_custom_reporter(msg, msg_type, error_info, is_redelivered)
 
-    if is_redelivered && MessageContext.with_dlq_retry() do
-      if num >= MessageContext.max_retries() do
+    if is_redelivered && MessageContext.with_dlq_retry(broker) do
+      if num >= MessageContext.max_retries(broker) do
         log_error(msg, error_info, :definitive_discard)
-        DiscardNotifier.notify(msg)
+        DiscardNotifier.notify(msg, broker)
         :ok = ack(chan, tag)
       else
         log_error(msg, error_info, :retry_dlq)

@@ -2,11 +2,12 @@ defmodule SubsConfigProcess do
   @moduledoc false
   use GenServer
 
-  def start_link(config = %HandlersConfig{}) do
-    GenServer.start_link(__MODULE__, config, name: __MODULE__)
+  def start_link(config = %HandlersConfig{broker: broker}) do
+    GenServer.start_link(__MODULE__, config,
+      name: SafeAtom.to_atom("subs_config_process_#{broker}")
+    )
   end
 
-  @impl true
   def init(config) do
     :ok = HandlerRegistry.commit_config(config)
     :ignore

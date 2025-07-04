@@ -9,19 +9,19 @@ defmodule QueryExecutor do
   end
 
   @impl true
-  def on_post_process(resp, %MessageToHandle{headers: headers}) do
+  def on_post_process(resp, %MessageToHandle{headers: headers}, broker) do
     correlation_id = HeaderExtractor.get_header_value(headers, MessageHeaders.h_correlation_id())
     # TODO: habilitar header de señalización de respuesta vacía
     msg =
       OutMessage.new(
-        headers: build_headers(correlation_id),
-        exchange_name: MessageContext.reply_exchange_name(),
+        headers: build_headers(broker, correlation_id),
+        exchange_name: MessageContext.reply_exchange_name(broker),
         routing_key: HeaderExtractor.get_header_value(headers, MessageHeaders.h_reply_id()),
         payload: Poison.encode!(resp)
       )
 
     # TODO: considerar relacion de canal y ¿publisher confirms?
-    MessageSender.send_message(msg)
+    MessageSender.send_message(msg, broker)
   end
 
   @impl true
@@ -29,10 +29,11 @@ defmodule QueryExecutor do
     headers |> HeaderExtractor.get_header_value(MessageHeaders.h_served_query_id())
   end
 
-  defp build_headers(correlation_id) do
+  defp build_headers(broker, correlation_id) do
     [
       {MessageHeaders.h_correlation_id(), :longstr, correlation_id},
-      {MessageHeaders.h_source_application(), :longstr, MessageContext.config().application_name}
+      {MessageHeaders.h_source_application(), :longstr,
+       MessageContext.config(broker).application_name}
     ]
   end
 end

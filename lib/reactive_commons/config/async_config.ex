@@ -1,39 +1,40 @@
 defmodule AsyncConfig do
   @moduledoc """
-  Configuration structure for using reactive commons abstraction
+    Configuration structure for using reactive commons abstraction
 
-  The required properties are:
-  - application_name: "my_app"
+    The required properties are:
+    - application_name: "my_app"
 
-  Optionally you can change the default values for another property
-  ```elixir
-  %{
-    reply_exchange: "globalReply",
-    direct_exchange: "directMessages",
-    events_exchange: "domainEvents",
-    connection_props: "amqp://guest:guest@localhost", this value is passed as uri_or_options in https://hexdocs.pm/amqp/AMQP.Connection.html#open/1
-    connection_assignation: %{
-      ReplyListener: ListenerConn,
-      QueryListener: ListenerConn,
-      CommandListener: ListenerConn,
-      EventListener: ListenerConn,
-      NotificationEventListener: ListenerConn,
-      MessageExtractor: ListenerConn,
-      MessageSender: SenderConn,
-      ListenerController: SenderConn,
-    },
-    topology: %{
-      command_sender: false,
-      queries_sender: false,
-      events_sender: false
-    },
-    queries_reply: true,
-    with_dlq_retry: false,
-    retry_delay: 500,
-    max_retries: 10,
-    prefetch_count: 250,
-  }
-  ```
+    Optionally you can change the default values for another property
+    ```elixir
+    %{
+     reply_exchange: "globalReply",
+     direct_exchange: "directMessages",
+     events_exchange: "domainEvents",
+     broker: "app",
+     connection_props: "amqp://guest:guest@localhost", this value is passed as uri_or_options in https://hexdocs.pm/amqp/AMQP.Connection.html#open/1
+     connection_assignation: %{
+       ReplyListener: ListenerConn,
+       QueryListener: ListenerConn,
+       CommandListener: ListenerConn,
+       EventListener: ListenerConn,
+       NotificationEventListener: ListenerConn,
+       MessageExtractor: ListenerConn,
+       MessageSender: SenderConn,
+       ListenerController: SenderConn,
+     },
+     topology: %{
+       command_sender: false,
+       queries_sender: false,
+       events_sender: false
+     },
+     queries_reply: true,
+     with_dlq_retry: false,
+     retry_delay: 500,
+     max_retries: 10,
+     prefetch_count: 250,
+    }
+    ```
   """
 
   defstruct [
@@ -54,11 +55,12 @@ defmodule AsyncConfig do
     :retry_delay,
     :max_retries,
     :prefetch_count,
+    :broker,
     extractor_debug: false
   ]
 
   @doc """
-  Creates a new default valued AsyncConfig struct with the specified app name.
+   Create a new default value AsyncConfig struct with the specified app name.
   """
   def new(app_name) do
     %__MODULE__{application_name: app_name}

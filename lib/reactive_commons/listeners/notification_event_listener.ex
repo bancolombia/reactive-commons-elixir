@@ -5,28 +5,28 @@ defmodule NotificationEventListener do
     executor: NotificationEventExecutor
 
   @impl true
-  def should_listen, do: ListenersValidator.has_handlers(get_handlers())
+  def should_listen(broker), do: ListenersValidator.has_handlers(get_handlers(broker))
 
-  def get_handlers, do: MessageContext.handlers().notification_event_listeners
+  def get_handlers(broker), do: MessageContext.handlers(broker).notification_event_listeners
 
   @impl true
-  def initial_state do
-    %{prefetch_count: MessageContext.prefetch_count()}
+  def initial_state(broker, table) do
+    %{prefetch_count: MessageContext.prefetch_count(broker), broker: broker, table: table}
   end
 
   @impl true
-  def create_topology(chan, state) do
+  def create_topology(chan, state = %{broker: broker, table: table}) do
     # Topology
     stop_and_delete(state)
-
-    queue_name = MessageContext.gen_notification_event_queue_name()
-    events_exchange_name = MessageContext.events_exchange_name()
+    queue_name = MessageContext.gen_notification_event_queue_name(broker)
+    events_exchange_name = MessageContext.events_exchange_name(broker)
     # Exchange
     :ok = AMQP.Exchange.declare(chan, events_exchange_name, :topic, durable: true)
     # Queue
     {:ok, _} = AMQP.Queue.declare(chan, queue_name, auto_delete: true, exclusive: true)
     # Bindings
-    for {event_name, _handler} <- :ets.tab2list(@handlers_table) do
+    for {_namespace, handlers} <- :ets.tab2list(table),
+        {event_name, _handler} <- handlers do
       :ok = AMQP.Queue.bind(chan, queue_name, events_exchange_name, routing_key: event_name)
     end
 

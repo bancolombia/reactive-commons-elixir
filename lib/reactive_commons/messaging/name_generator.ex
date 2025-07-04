@@ -1,6 +1,6 @@
 defmodule NameGenerator do
   @moduledoc """
-  This module generates unique identifiers for temporary queue names, message ids and routing keys.
+    This module generates unique identifiers for temporary queue names, message ids and routing keys.
   """
 
   @doc """

@@ -13,13 +13,13 @@ defmodule MessageExtractor do
     message_id: nil
   ]
 
-  def start_link(_, opts \\ [name: __MODULE__]) do
-    GenServer.start_link(__MODULE__, nil, opts)
+  def start_link(broker) do
+    GenServer.start_link(__MODULE__, broker, name: build_name(__MODULE__, broker))
   end
 
   @impl true
-  def init(_) do
-    :ok = ConnectionsHolder.get_connection_async(__MODULE__)
+  def init(broker) do
+    :ok = ConnectionsHolder.get_connection_async(build_name(__MODULE__, broker), broker)
     {:ok, %__MODULE__{}}
   end
 
@@ -196,5 +196,15 @@ defmodule MessageExtractor do
       ) do
     :ok = AMQP.Basic.nack(chan, tag)
     {:noreply, state}
+  end
+
+  defp build_name(module, broker) do
+    module
+    |> Atom.to_string()
+    |> String.split(".")
+    |> List.last()
+    |> Macro.underscore()
+    |> Kernel.<>("_" <> to_string(broker))
+    |> SafeAtom.to_atom()
   end
 end

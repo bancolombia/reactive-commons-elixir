@@ -1,7 +1,7 @@
 defmodule Command do
   @moduledoc """
-  Commands represent a intention for doing something, that intention must to be done by the domain context with that
-  responsibility. An example of a command may be: "RegisterUser" or "SendNotification".
+    Commands represent a intention for doing something, that intention must to be done by the domain context with that
+    responsibility. An example of a command may be: "RegisterUser" or "SendNotification".
   """
 
   defstruct [:name, :commandId, :data]

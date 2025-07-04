@@ -1,12 +1,12 @@
 defmodule DomainEvent do
   @moduledoc """
-  Events represent a fact inside the domain, it is the representation of a decision or a state change that a system want
-  to notify to its subscribers. Events represents facts that nobody can change, so events are not intentions or requests
-  of anything, An example may be and UserRegistered or a NotificationSent.
+    Events represent a fact inside the domain, it is the representation of a decision or a state change that a system want
+    to notify to its subscribers. Events represents facts that nobody can change, so events are not intentions or requests
+    of anything, An example may be and UserRegistered or a NotificationSent.
 
-  Events are the most important topic in a Publish-Subscribe system, because this element let’s notify a many
-  stakeholders in a specific event. An other benefit is the system is decouple, because you can add more subscriber to
-  the system without modify some component.
+    Events are the most important topic in a Publish-Subscribe system, because this element let’s notify a many
+    stakeholders in a specific event. An other benefit is the system is decouple, because you can add more subscriber to
+    the system without modify some component.
   """
 
   defstruct [
