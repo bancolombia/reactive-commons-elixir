@@ -9,7 +9,7 @@ defmodule QueryClient.RestController do
   @notification_event_name "ConfigurationChanged"
 
   @broker "app2"
-  @target2 "sample-query-server2"
+  @target2 "sample-query-server-2"
 
   plug(:match)
   plug(:dispatch)

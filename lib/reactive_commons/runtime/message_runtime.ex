@@ -13,7 +13,14 @@ defmodule MessageRuntime do
   def init(config_map) do
     children =
       Enum.map(config_map, fn {broker, conf_map} ->
-        full_config = struct(AsyncConfig, Map.put(conf_map, :broker, broker))
+        full_config =
+          case conf_map do
+            %AsyncConfig{} = cfg ->
+              %{cfg | broker: broker}
+
+            %{} = raw ->
+              struct(AsyncConfig, Map.put(raw, :broker, broker))
+          end
 
         Supervisor.child_spec(
           {MessageRuntime.BrokerRuntime, full_config},
