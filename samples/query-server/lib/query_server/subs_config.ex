@@ -6,25 +6,29 @@ defmodule QueryServer.SubsConfig do
   @event_name "PersonRegistered"
   @notification_event_name "ConfigurationChanged"
 
-  def start_link(broker) do
-    GenServer.start_link(__MODULE__, broker, name: :"query_server_subconfig_#{broker}")
+  def start_link(args) do
+    GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
 
   @impl true
-  def init(broker) do
-    HandlerRegistry.serve_query(broker, @query_name, fn query -> get_person(query, broker) end)
-    |> HandlerRegistry.handle_command(@command_name, fn command ->
-      register_person(command, broker)
-    end)
-    |> HandlerRegistry.listen_event(@event_name, fn event ->
+  def init(args) do
+    config_broker(:app)
+    config_broker(:app2)
+    {:ok, nil}
+  end
+
+  defp config_broker(broker) do
+    HandlerRegistry.listen_event(broker, @event_name, fn event ->
       person_registered(event, broker)
     end)
     |> HandlerRegistry.listen_notification_event(@notification_event_name, fn notification ->
       configuration_changed(notification, broker)
     end)
+    |> HandlerRegistry.serve_query(@query_name, fn query -> get_person(query, broker) end)
+    |> HandlerRegistry.handle_command(@command_name, fn command ->
+      register_person(command, broker)
+    end)
     |> HandlerRegistry.commit_config()
-
-    {:ok, nil}
   end
 
   def get_person(%{} = request, broker) do
