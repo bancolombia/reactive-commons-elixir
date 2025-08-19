@@ -24,8 +24,7 @@ defmodule QueryListenerTest do
       broker = :test_broker
       handlers = []
 
-      with_mock MessageContext, [:passthrough],
-        handlers: fn ^broker -> %{query_listeners: handlers} end do
+      with_mock MessageContext, [:passthrough], handlers: fn ^broker -> %{query_listeners: handlers} end do
         with_mock ListenersValidator, [:passthrough], has_handlers: fn ^handlers -> false end do
           assert QueryListener.should_listen(broker) == false
 
