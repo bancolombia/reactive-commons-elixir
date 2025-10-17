@@ -1,6 +1,5 @@
 defmodule ReactiveCommonsSetupTest do
   use ExUnit.Case
-  import Mock
 
   defmodule TestSetup do
     use ReactiveCommonsSetup

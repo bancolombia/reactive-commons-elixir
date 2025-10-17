@@ -137,11 +137,11 @@ defmodule RabbitConnectionTest do
     end
 
     test "handles max retries reached scenario" do
-      connection_props = [host: "invalid_host", port: 9999]
+      opts = [connection_props: [host: "invalid_host", port: 9999]]
       state = %RabbitConnection{name: :test, parent_pid: nil, connection: nil}
 
       assert {:stop, :max_reconnect_failed, ^state} =
-               RabbitConnection.handle_info({:connect, connection_props, 5}, state)
+               RabbitConnection.handle_info({:connect, opts, 5}, state)
     end
 
     test "sends notification to parent when connection succeeds" do
@@ -155,10 +155,10 @@ defmodule RabbitConnectionTest do
     end
 
     test "schedules reconnection on failure with valid retry count" do
-      connection_props = [host: "invalid_host", port: 9999]
+      opts = [connection_props: [host: "invalid_host", port: 9999]]
       state = %RabbitConnection{name: :test, parent_pid: nil, connection: nil}
 
-      result = RabbitConnection.handle_info({:connect, connection_props, 2}, state)
+      result = RabbitConnection.handle_info({:connect, opts, 2}, state)
 
       assert match?({:noreply, _}, result) or match?({:stop, :max_reconnect_failed, _}, result)
     end
