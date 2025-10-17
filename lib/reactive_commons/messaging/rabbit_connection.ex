@@ -37,6 +37,7 @@ defmodule RabbitConnection do
   def handle_info({:connect, opts, intent}, state) when intent < @max_intents do
     connection_props = Keyword.get(opts, :connection_props)
     name = Keyword.get(opts, :name, :none)
+
     case connect(connection_props, Atom.to_string(name)) do
       {:ok, conn} ->
         Process.monitor(conn.pid)
@@ -57,6 +58,7 @@ defmodule RabbitConnection do
   @impl true
   def handle_info({:connect, opts, _}, state) do
     connection_props = Keyword.get(opts, :connection_props)
+
     Logger.error(
       "Failed to connect #{log_securely(connection_props)}. Max retries reached!. Terminating!"
     )

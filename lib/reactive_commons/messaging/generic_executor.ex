@@ -101,18 +101,16 @@ defmodule GenericExecutor do
             t0,
             message_type
           ) do
-        try do
-          event = decode(msg)
-          handler_path = get_handler_path(msg, event)
-          [{_broker, handler_map}] = :ets.lookup(table, broker)
-          handler_fn = Map.fetch!(handler_map, handler_path)
-          handler_result = handler_fn.(event)
-          on_post_process(handler_result, msg, broker)
-          report_to_telemetry(msg, message_type, handler_path, calc_duration(t0), :success)
-          :ok = ack(chan, tag)
-        catch
-          info, error -> {:error, info, error, __STACKTRACE__}
-        end
+        event = decode(msg)
+        handler_path = get_handler_path(msg, event)
+        [{_broker, handler_map}] = :ets.lookup(table, broker)
+        handler_fn = Map.fetch!(handler_map, handler_path)
+        handler_result = handler_fn.(event)
+        on_post_process(handler_result, msg, broker)
+        report_to_telemetry(msg, message_type, handler_path, calc_duration(t0), :success)
+        :ok = ack(chan, tag)
+      catch
+        info, error -> {:error, info, error, __STACKTRACE__}
       end
 
       def requeue_or_ack(

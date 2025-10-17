@@ -7,7 +7,7 @@ defmodule MessageContextTest do
   setup do
     config = %AsyncConfig{
       application_name: @app_name,
-      broker: @broker,
+      broker: @broker
     }
 
     {:ok, pid} = MessageContext.start_link(config)

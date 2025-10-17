@@ -8,7 +8,11 @@ defmodule HandlersConfig do
             broker: :app
 
   @type listener_type ::
-          :query_listeners | :event_listeners | :notification_event_listeners | :command_listeners | :invalid_message_handlers
+          :query_listeners
+          | :event_listeners
+          | :notification_event_listeners
+          | :command_listeners
+          | :invalid_message_handlers
 
   @spec add_listener(t(), listener_type(), String.t(), any()) :: t()
 

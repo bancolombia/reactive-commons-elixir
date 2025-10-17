@@ -68,9 +68,11 @@ defmodule MessageContext do
     }
   end
 
-  defp set_default_retries(config = %AsyncConfig{with_dlq_retry: dlq}) when is_nil(dlq) or dlq == false do
+  defp set_default_retries(config = %AsyncConfig{with_dlq_retry: dlq})
+       when is_nil(dlq) or dlq == false do
     put_if_nil(config, :max_retries, 0)
   end
+
   defp set_default_retries(config = %AsyncConfig{}) do
     config
   end
