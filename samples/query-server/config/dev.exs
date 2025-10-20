@@ -5,11 +5,11 @@ config :query_server,
     app: %{
       application_name: "sample-query-server",
       queries_reply: true,
-      max_retries: 1,
+      max_retries: 1
     },
     app2: %{
       application_name: "sample-query-server-2",
       queries_reply: true,
-      max_retries: 5,
+      max_retries: 5
     }
   }
