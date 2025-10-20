@@ -87,11 +87,9 @@ defmodule GenericExecutor do
       end
 
       defp try_get_handler_path(msg) do
-        try do
-          get_handler_path(msg, decode(msg))
-        catch
-          _type, _err -> :erlang.atom_to_binary(@message_type) <> ".unknown"
-        end
+        get_handler_path(msg, decode(msg))
+      catch
+        _type, _err -> :erlang.atom_to_binary(@message_type) <> ".unknown"
       end
 
       defoverridable decode: 1, on_post_process: 3
