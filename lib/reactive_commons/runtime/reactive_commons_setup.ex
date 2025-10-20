@@ -8,6 +8,7 @@ defmodule ReactiveCommonsSetup do
   defmacro __using__(_opts) do
     quote do
       use Supervisor
+      @behaviour ReactiveCommonsSetup
 
       def start_link(args) do
         Supervisor.start_link(__MODULE__, args, name: __MODULE__)
@@ -62,9 +63,6 @@ defmodule ReactiveCommonsSetup do
         |> Map.merge(broker_cfg)
       end
 
-      @doc """
-      Get config of type HandlersConfig.
-      """
       defp handlers_config(%AsyncConfig{broker: broker}) do
         %HandlersConfig{broker: broker}
       end

@@ -3,6 +3,7 @@ defmodule HandlerRegistry do
   This module allows the subscription for events, commands and async queries and for registering their respective handlers.
   """
   alias HandlersConfig, as: Conf
+  require Logger
 
   def serve_query(path, handler), do: serve_query(:app, path, handler)
 
@@ -36,5 +37,11 @@ defmodule HandlerRegistry do
   def listen_notification_event(conf = %Conf{}, path, handler),
     do: Conf.add_listener(conf, :notification_event_listeners, path, handler)
 
-  def commit_config(conf = %Conf{}), do: ListenerController.configure(conf)
+  def invalid_message_handler(conf = %Conf{}, handler),
+    do: Conf.add_listener(conf, :invalid_message_handlers, "error", handler)
+
+  def commit_config(conf = %Conf{}) do
+    Logger.debug("Committing handler configuration #{inspect(conf)}")
+    ListenerController.configure(conf)
+  end
 end

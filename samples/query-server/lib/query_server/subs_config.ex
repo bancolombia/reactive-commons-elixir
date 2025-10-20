@@ -28,6 +28,10 @@ defmodule QueryServer.SubsConfig do
     |> HandlerRegistry.handle_command(@command_name, fn command ->
       register_person(command, broker)
     end)
+    |> HandlerRegistry.invalid_message_handler(fn type, invalid_msg ->
+      IO.puts("Handling invalid message #{inspect(invalid_msg)} in broker #{broker}")
+      :shandled
+    end)
     |> HandlerRegistry.commit_config()
   end
 

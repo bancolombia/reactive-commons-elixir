@@ -3,10 +3,11 @@ defmodule MessageRuntime do
     This module initializes and supervises all required processes to enable the reactive commons ecosystem
   """
   use Supervisor
+  def start_link(init_args, name \\ __MODULE__)
 
-  def start_link(init_args) when is_map(init_args) do
+  def start_link(init_args, name) when is_map(init_args) do
     normalized_config = normalize_config(init_args)
-    Supervisor.start_link(__MODULE__, normalized_config, name: __MODULE__)
+    Supervisor.start_link(__MODULE__, normalized_config, name: name)
   end
 
   @impl true

@@ -8,7 +8,7 @@ defmodule QueryServer.Application do
   def start(_type, _args) do
     children = [
       {RabbitConfig, []},
-      {SubsConfig, []},
+      {SubsConfig, []}
     ]
 
     opts = [strategy: :one_for_one, name: QueryServer.Supervisor]

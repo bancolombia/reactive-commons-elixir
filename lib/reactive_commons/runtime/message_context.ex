@@ -12,14 +12,14 @@ defmodule MessageContext do
     connection_props: "amqp://guest:guest@localhost",
     broker: "app",
     connection_assignation: %{
-      ReplyListener: ListenerConn,
-      QueryListener: ListenerConn,
-      CommandListener: ListenerConn,
-      EventListener: ListenerConn,
-      NotificationEventListener: ListenerConn,
-      MessageExtractor: ListenerConn,
-      MessageSender: SenderConn,
-      ListenerController: SenderConn
+      ReplyListener: ExConn,
+      QueryListener: ExConn,
+      CommandListener: ExConn,
+      EventListener: ExConn,
+      NotificationEventListener: ExConn,
+      MessageExtractor: ExConn,
+      MessageSender: ExConn,
+      ListenerController: ExConn
     },
     topology: %{
       command_sender: false,
@@ -44,6 +44,7 @@ defmodule MessageContext do
     Logger.info("Starting message context for broker #{broker}")
 
     config
+    |> set_default_retries()
     |> put_default_values()
     |> put_route_info()
     |> save_in_ets(broker)
@@ -65,6 +66,15 @@ defmodule MessageContext do
         notification_event_queue: NameGenerator.generate(app_name, "notification"),
         command_queue: "#{app_name}"
     }
+  end
+
+  defp set_default_retries(config = %AsyncConfig{with_dlq_retry: dlq})
+       when is_nil(dlq) or dlq == false do
+    put_if_nil(config, :max_retries, 0)
+  end
+
+  defp set_default_retries(config = %AsyncConfig{}) do
+    config
   end
 
   defp put_default_values(config = %AsyncConfig{}) do
@@ -127,6 +137,19 @@ defmodule MessageContext do
     case :ets.lookup(table, :handlers) do
       [{:handlers, config}] -> config
       [] -> []
+    end
+  end
+
+  def get_invalid_message_handler(broker) do
+    table = ets_table_name(broker)
+
+    case :ets.lookup(table, :handlers) do
+      [{:handlers, config}] ->
+        handler = Map.get(config.invalid_message_handlers, broker, %{})
+        Map.get(handler, "error", nil)
+
+      [] ->
+        nil
     end
   end
 

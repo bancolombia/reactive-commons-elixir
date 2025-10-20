@@ -1,6 +1,6 @@
 import Config
 
 config :query_server,
-       async_config: %{
-         application_name: "sample-query-server"
-       }
+  async_config: %{
+    application_name: "sample-query-server"
+  }

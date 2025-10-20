@@ -15,10 +15,9 @@ defmodule RabbitConnection do
 
   @impl true
   def init(opts) do
-    connection_props = Keyword.get(opts, :connection_props)
-    name = Keyword.get(opts, :name, "NoName")
+    name = Keyword.get(opts, :name)
     parent_pid = Keyword.get(opts, :parent_pid, nil)
-    send(self(), {:connect, connection_props, _intent = 0})
+    send(self(), {:connect, opts, _intent = 0})
     {:ok, %__MODULE__{name: name, parent_pid: parent_pid}}
   end
 
@@ -35,8 +34,11 @@ defmodule RabbitConnection do
   end
 
   @impl true
-  def handle_info({:connect, connection_props, intent}, state) when intent < @max_intents do
-    case Connection.open(connection_props) do
+  def handle_info({:connect, opts, intent}, state) when intent < @max_intents do
+    connection_props = Keyword.get(opts, :connection_props)
+    name = Keyword.get(opts, :name, :none)
+
+    case connect(connection_props, Atom.to_string(name)) do
       {:ok, conn} ->
         Process.monitor(conn.pid)
         notify_connection(state, conn)
@@ -48,13 +50,15 @@ defmodule RabbitConnection do
         )
 
         Logger.error("Reason #{inspect(reason)}")
-        Process.send_after(self(), {:connect, connection_props, intent + 1}, @reconnect_interval)
+        Process.send_after(self(), {:connect, opts, intent + 1}, @reconnect_interval)
         {:noreply, state}
     end
   end
 
   @impl true
-  def handle_info({:connect, connection_props, _}, state) do
+  def handle_info({:connect, opts, _}, state) do
+    connection_props = Keyword.get(opts, :connection_props)
+
     Logger.error(
       "Failed to connect #{log_securely(connection_props)}. Max retries reached!. Terminating!"
     )
@@ -66,6 +70,14 @@ defmodule RabbitConnection do
   def handle_info({:DOWN, _, :process, _pid, reason}, _) do
     Logger.warning("RabbitMQ Connection Lost: #{inspect(reason)}")
     {:stop, {:connection_lost, reason}, nil}
+  end
+
+  defp connect(connection_props, name) when is_binary(connection_props) do
+    Connection.open(connection_props, name: name)
+  end
+
+  defp connect(connection_props, name) do
+    Connection.open(Keyword.put(connection_props, :name, name))
   end
 
   defp notify_connection(%{parent_pid: nil}, _conn), do: :ok

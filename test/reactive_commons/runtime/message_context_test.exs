@@ -27,7 +27,7 @@ defmodule MessageContextTest do
     assert MessageContext.direct_exchange_name(@broker) == "directMessages"
     assert MessageContext.events_exchange_name(@broker) == "domainEvents"
     assert MessageContext.retry_delay(@broker) == 500
-    assert MessageContext.max_retries(@broker) == 10
+    assert MessageContext.max_retries(@broker) == 0
     assert MessageContext.prefetch_count(@broker) == 250
     assert MessageContext.application_name(@broker) == @app_name
     assert is_map(MessageContext.topology(@broker))

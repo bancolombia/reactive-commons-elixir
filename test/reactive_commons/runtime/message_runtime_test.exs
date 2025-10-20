@@ -9,7 +9,7 @@ defmodule MessageRuntimeTest do
   describe "start_link/1 and init/1" do
     test "starts the supervisor with config as map of one broker" do
       conf = %{broker1: %{application_name: "sample-broker1"}}
-      {:ok, pid} = MessageRuntime.start_link(conf)
+      {:ok, pid} = MessageRuntime.start_link(conf, :a)
       assert is_pid(pid)
       assert Process.alive?(pid)
       close_process(pid)
@@ -21,7 +21,7 @@ defmodule MessageRuntimeTest do
         broker3: %{application_name: "sample-broker3"}
       }
 
-      {:ok, pid} = MessageRuntime.start_link(conf)
+      {:ok, pid} = MessageRuntime.start_link(conf, :b)
       assert is_pid(pid)
       assert Process.alive?(pid)
       close_process(pid)
@@ -29,15 +29,15 @@ defmodule MessageRuntimeTest do
 
     test "starts the supervisor with AsyncConfig struct and extractor debug true" do
       conf = %AsyncConfig{application_name: "sample-app", extractor_debug: true}
-      {:ok, pid} = MessageRuntime.start_link(conf)
+      {:ok, pid} = MessageRuntime.start_link(conf, :c)
       assert is_pid(pid)
       assert Process.alive?(pid)
       close_process(pid)
     end
 
     test "starts the supervisor with AsyncConfig struct and extractor debug false" do
-      conf = %AsyncConfig{application_name: "sample-app"}
-      {:ok, pid} = MessageRuntime.start_link(conf)
+      conf = %{broker4: %AsyncConfig{application_name: "sample-app"}}
+      {:ok, pid} = MessageRuntime.start_link(conf, :d)
       assert is_pid(pid)
       assert Process.alive?(pid)
       close_process(pid)

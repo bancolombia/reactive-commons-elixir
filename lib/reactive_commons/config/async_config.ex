@@ -14,14 +14,14 @@ defmodule AsyncConfig do
      broker: "app",
      connection_props: "amqp://guest:guest@localhost", this value is passed as uri_or_options in https://hexdocs.pm/amqp/AMQP.Connection.html#open/1
      connection_assignation: %{
-       ReplyListener: ListenerConn,
-       QueryListener: ListenerConn,
-       CommandListener: ListenerConn,
-       EventListener: ListenerConn,
-       NotificationEventListener: ListenerConn,
-       MessageExtractor: ListenerConn,
-       MessageSender: SenderConn,
-       ListenerController: SenderConn,
+       ReplyListener: ExConn,
+       QueryListener: ExConn,
+       CommandListener: ExConn,
+       EventListener: ExConn,
+       NotificationEventListener: ExConn,
+       MessageExtractor: ExConn,
+       MessageSender: ExConn,
+       ListenerController: ExConn,
      },
      topology: %{
        command_sender: false,

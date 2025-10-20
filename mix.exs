@@ -47,15 +47,18 @@ defmodule ReactiveCommons.MixProject do
   defp deps do
     [
       {:poison, "~> 6.0 or ~> 5.0"},
-      {:amqp, "~> 4.0 or ~> 3.3"},
+      {:amqp, "~> 4.1 or ~> 3.3"},
       {:uuid, "~> 1.1"},
       {:telemetry, "~> 1.3"},
+      {:opentelemetry_reactive_commons, "~> 1.0", optional: true},
+      {:jason, "~> 1.2 or ~> 1.3"},
+      # Documentation
       {:ex_doc, ">= 0.0.0", only: [:dev, :test], runtime: false},
       # Tests and Analysis
-      {:sobelow, "~> 0.13", [only: [:dev, :test]]},
-      {:mock, "~> 0.3.8", [only: [:dev, :test]]},
+      {:sobelow, "~> 0.14", [only: [:dev, :test]]},
+      {:mock, "~> 0.3", [only: [:dev, :test]]},
       {:excoveralls, "~> 0.18", [only: [:dev, :test]]},
-      {:git_hooks, "~> 0.7.3", [only: [:dev, :test], runtime: false]},
+      {:git_hooks, "~> 0.8", [only: [:dev, :test], runtime: false]},
       {:credo, "~> 1.7", [only: [:dev, :test], runtime: false]},
       {:dialyxir, "~> 1.4", [only: [:dev, :test], runtime: false]}
     ]
