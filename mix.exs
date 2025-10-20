@@ -50,6 +50,9 @@ defmodule ReactiveCommons.MixProject do
       {:amqp, "~> 4.1 or ~> 3.3"},
       {:uuid, "~> 1.1"},
       {:telemetry, "~> 1.3"},
+      {:opentelemetry_reactive_commons, "~> 1.0", optional: true},
+      {:jason, "~> 1.2 or ~> 1.3"},
+      # Documentation
       {:ex_doc, ">= 0.0.0", only: [:dev, :test], runtime: false},
       # Tests and Analysis
       {:sobelow, "~> 0.14", [only: [:dev, :test]]},
