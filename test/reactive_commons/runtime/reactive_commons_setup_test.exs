@@ -42,8 +42,8 @@ defmodule ReactiveCommonsSetupTest do
         @impl true
         def config do
           %{
-            broker1: %{application_name: "test1"},
-            broker2: %{application_name: "test2"}
+            broker7: %{application_name: "test1"},
+            broker8: %{application_name: "test2"}
           }
         end
       end
@@ -57,12 +57,12 @@ defmodule ReactiveCommonsSetupTest do
              end)
 
       assert Enum.any?(children, fn
-               {{:subs_config, :broker1}, _, _, _} -> true
+               {{:subs_config, :broker7}, _, _, _} -> true
                _ -> false
              end)
 
       assert Enum.any?(children, fn
-               {{:subs_config, :broker2}, _, _, _} -> true
+               {{:subs_config, :broker8}, _, _, _} -> true
                _ -> false
              end)
     end

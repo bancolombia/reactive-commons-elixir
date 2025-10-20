@@ -36,7 +36,7 @@ defmodule MessageRuntimeTest do
     end
 
     test "starts the supervisor with AsyncConfig struct and extractor debug false" do
-      conf = %AsyncConfig{application_name: "sample-app"}
+      conf = %{broker4: %AsyncConfig{application_name: "sample-app"}}
       {:ok, pid} = MessageRuntime.start_link(conf, :d)
       assert is_pid(pid)
       assert Process.alive?(pid)
