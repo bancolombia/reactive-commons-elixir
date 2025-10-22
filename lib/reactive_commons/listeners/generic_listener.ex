@@ -6,12 +6,12 @@ defmodule GenericListener do
   @doc """
   Evaluate if should listen for this kind of events.
   """
-  @callback should_listen(String.t()) :: boolean()
+  @callback should_listen(atom()) :: boolean()
 
   @doc """
   Get initial state.
   """
-  @callback initial_state(String.t(), atom()) :: map()
+  @callback initial_state(map(), atom()) :: map()
 
   @doc """
   Create resource topology.
@@ -30,21 +30,21 @@ defmodule GenericListener do
 
       defstruct [:conn, :chan, :queue_name, :consumer_tag, :prefetch_count, :broker, :table]
 
-      def start_link(broker) do
-        name = build_name(__MODULE__, broker)
-        GenServer.start_link(__MODULE__, broker, name: name)
+      def start_link(args) do
+        name = build_name(__MODULE__, args)
+        GenServer.start_link(__MODULE__, args, name: name)
       end
 
       @impl true
-      def init(broker) do
+      def init(args = %{broker: broker}) do
         IO.puts("########### STARTING #{@kind} LISTENER FOR BROKER #{broker} #############")
 
         if should_listen(broker) do
-          component_name = build_name(__MODULE__, broker)
+          component_name = build_name(__MODULE__, args)
           :ok = ConnectionsHolder.get_connection_async(component_name, broker)
-          table = table_name(broker)
-          :ok = create_ets(table, broker)
-          {:ok, struct(__MODULE__, initial_state(broker, table))}
+          table = table_name(args)
+          :ok = create_ets(table, args)
+          {:ok, struct(__MODULE__, initial_state(args, table))}
         else
           IO.puts("########### #{@kind} LISTENER SKIPPED FOR BROKER #{broker} #############")
           :ignore
@@ -121,7 +121,7 @@ defmodule GenericListener do
         spawn_link(@executor, :handle_message, [message_to_handle, broker])
       end
 
-      def get_handlers(broker), do: %{}
+      def get_handlers(args), do: %{}
 
       defp stop_and_delete(_state = %{queue_name: nil}), do: :ok
       defp stop_and_delete(_state = %{consumer_tag: nil}), do: :ok
@@ -143,26 +143,42 @@ defmodule GenericListener do
         :ok
       end
 
-      defp table_name(broker),
-        do: SafeAtom.to_atom("handler_table_#{build_name(__MODULE__, broker)}")
+      defp table_name(args),
+        do: SafeAtom.to_atom("handler_table_#{build_name(__MODULE__, args)}")
 
-      defp build_name(module, broker) do
-        module
-        |> Atom.to_string()
-        |> String.split(".")
-        |> List.last()
-        |> Macro.underscore()
-        |> Kernel.<>("_" <> to_string(broker))
-        |> SafeAtom.to_atom()
-      end
-
-      defp create_ets(table_name, broker) do
+      defp create_ets(table_name, args) do
         :ets.new(table_name, [:named_table, read_concurrency: true])
-        GenServer.cast(build_name(__MODULE__, broker), {:save_handlers, get_handlers(broker)})
+        GenServer.cast(build_name(__MODULE__, args), {:save_handlers, get_handlers(args)})
       end
 
       defoverridable consume: 3, get_handlers: 1
     end
+  end
+
+  def build_name(module, %{broker: broker, queue: queue_name}) do
+    module
+    |> Atom.to_string()
+    |> String.split(".")
+    |> List.last()
+    |> Macro.underscore()
+    |> Kernel.<>("_" <> to_string(broker) <> safe_queue_name(queue_name))
+    |> SafeAtom.to_atom()
+  end
+
+  def build_name(module, %{broker: broker}), do: build_name(module, broker)
+
+  def build_name(module, broker) do
+    module
+    |> Atom.to_string()
+    |> String.split(".")
+    |> List.last()
+    |> Macro.underscore()
+    |> Kernel.<>("_" <> to_string(broker))
+    |> SafeAtom.to_atom()
+  end
+
+  defp safe_queue_name(name) do
+    String.replace(name, "_", "")
   end
 
   def declare_dlq(chan, origin_queue, retry_target, retry_time) do

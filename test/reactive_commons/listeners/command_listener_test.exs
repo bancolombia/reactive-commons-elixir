@@ -58,7 +58,7 @@ defmodule CommandListenerTest do
 
       with_mock MessageContext, [:passthrough],
         handlers: fn ^broker -> %{command_listeners: expected_handlers} end do
-        result = CommandListener.get_handlers(broker)
+        result = CommandListener.get_handlers(%{broker: broker})
 
         assert result == expected_handlers
         assert_called(MessageContext.handlers(broker))
@@ -70,7 +70,7 @@ defmodule CommandListenerTest do
 
       with_mock MessageContext, [:passthrough],
         handlers: fn ^broker -> %{command_listeners: []} end do
-        result = CommandListener.get_handlers(broker)
+        result = CommandListener.get_handlers(%{broker: broker})
 
         assert result == []
         assert_called(MessageContext.handlers(broker))
@@ -82,7 +82,7 @@ defmodule CommandListenerTest do
 
       with_mock MessageContext, [:passthrough],
         handlers: fn ^broker -> %{command_listeners: nil} end do
-        result = CommandListener.get_handlers(broker)
+        result = CommandListener.get_handlers(%{broker: broker})
 
         assert result == nil
         assert_called(MessageContext.handlers(broker))
@@ -100,7 +100,7 @@ defmodule CommandListenerTest do
       with_mock MessageContext, [:passthrough],
         command_queue_name: fn ^broker -> queue_name end,
         prefetch_count: fn ^broker -> prefetch_count end do
-        result = CommandListener.initial_state(broker, table)
+        result = CommandListener.initial_state(%{broker: broker}, table)
 
         expected_state = %{
           prefetch_count: prefetch_count,
@@ -126,7 +126,7 @@ defmodule CommandListenerTest do
         with_mock MessageContext, [:passthrough],
           command_queue_name: fn ^broker -> queue_name end,
           prefetch_count: fn ^broker -> prefetch_count end do
-          result = CommandListener.initial_state(broker, table)
+          result = CommandListener.initial_state(%{broker: broker}, table)
 
           expected_state = %{
             prefetch_count: prefetch_count,
@@ -464,9 +464,9 @@ defmodule CommandListenerTest do
       ]) do
         assert CommandListener.should_listen(broker) == true
 
-        assert CommandListener.get_handlers(broker) == handlers
+        assert CommandListener.get_handlers(%{broker: broker}) == handlers
 
-        state = CommandListener.initial_state(broker, table)
+        state = CommandListener.initial_state(%{broker: broker}, table)
 
         expected_state = %{
           prefetch_count: prefetch_count,
@@ -527,9 +527,9 @@ defmodule CommandListenerTest do
          ]}
       ]) do
         assert CommandListener.should_listen(broker) == true
-        assert CommandListener.get_handlers(broker) == handlers
+        assert CommandListener.get_handlers(%{broker: broker}) == handlers
 
-        state = CommandListener.initial_state(broker, table)
+        state = CommandListener.initial_state(%{broker: broker}, table)
         result = CommandListener.create_topology(chan, state)
         assert result == {:ok, state}
 

@@ -19,7 +19,8 @@ defmodule MessageContext do
       NotificationEventListener: ExConn,
       MessageExtractor: ExConn,
       MessageSender: ExConn,
-      ListenerController: ExConn
+      ListenerController: ExConn,
+      QueueListener: ExConn
     },
     topology: %{
       command_sender: false,

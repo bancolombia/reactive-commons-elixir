@@ -43,7 +43,7 @@ defmodule EventListenerTest do
 
       with_mock MessageContext, [:passthrough],
         handlers: fn ^broker -> %{event_listeners: expected_handlers} end do
-        result = EventListener.get_handlers(broker)
+        result = EventListener.get_handlers(%{broker: broker})
 
         assert result == expected_handlers
         assert_called(MessageContext.handlers(broker))
@@ -54,7 +54,7 @@ defmodule EventListenerTest do
       broker = :test_broker
 
       with_mock MessageContext, [:passthrough], handlers: fn ^broker -> %{event_listeners: []} end do
-        result = EventListener.get_handlers(broker)
+        result = EventListener.get_handlers(%{broker: broker})
 
         assert result == []
         assert_called(MessageContext.handlers(broker))
@@ -72,7 +72,7 @@ defmodule EventListenerTest do
       with_mock MessageContext, [:passthrough],
         event_queue_name: fn ^broker -> queue_name end,
         prefetch_count: fn ^broker -> prefetch_count end do
-        result = EventListener.initial_state(broker, table)
+        result = EventListener.initial_state(%{broker: broker}, table)
 
         expected_state = %{
           prefetch_count: prefetch_count,
@@ -504,9 +504,9 @@ defmodule EventListenerTest do
          ]}
       ]) do
         assert EventListener.should_listen(broker) == true
-        assert EventListener.get_handlers(broker) == handlers
+        assert EventListener.get_handlers(%{broker: broker}) == handlers
 
-        state = EventListener.initial_state(broker, table)
+        state = EventListener.initial_state(%{broker: broker}, table)
 
         expected_state = %{
           prefetch_count: prefetch_count,

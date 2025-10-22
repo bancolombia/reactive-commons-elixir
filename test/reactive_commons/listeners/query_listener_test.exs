@@ -43,7 +43,7 @@ defmodule QueryListenerTest do
 
       with_mock MessageContext, [:passthrough],
         handlers: fn ^broker -> %{query_listeners: expected_handlers} end do
-        result = QueryListener.get_handlers(broker)
+        result = QueryListener.get_handlers(%{broker: broker})
 
         assert result == expected_handlers
         assert_called(MessageContext.handlers(broker))
@@ -54,7 +54,7 @@ defmodule QueryListenerTest do
       broker = :test_broker
 
       with_mock MessageContext, [:passthrough], handlers: fn ^broker -> %{query_listeners: []} end do
-        result = QueryListener.get_handlers(broker)
+        result = QueryListener.get_handlers(%{broker: broker})
 
         assert result == []
         assert_called(MessageContext.handlers(broker))
@@ -72,7 +72,7 @@ defmodule QueryListenerTest do
       with_mock MessageContext, [:passthrough],
         query_queue_name: fn ^broker -> queue_name end,
         prefetch_count: fn ^broker -> prefetch_count end do
-        result = QueryListener.initial_state(broker, table)
+        result = QueryListener.initial_state(%{broker: broker}, table)
 
         expected_state = %{
           prefetch_count: prefetch_count,
@@ -265,9 +265,9 @@ defmodule QueryListenerTest do
       ]) do
         assert QueryListener.should_listen(broker) == true
 
-        assert QueryListener.get_handlers(broker) == handlers
+        assert QueryListener.get_handlers(%{broker: broker}) == handlers
 
-        state = QueryListener.initial_state(broker, table)
+        state = QueryListener.initial_state(%{broker: broker}, table)
 
         expected_state = %{
           prefetch_count: prefetch_count,

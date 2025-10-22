@@ -5,12 +5,13 @@ defmodule NotificationEventListener do
     executor: NotificationEventExecutor
 
   @impl true
-  def should_listen(broker), do: ListenersValidator.has_handlers(get_handlers(broker))
+  def should_listen(broker), do: ListenersValidator.has_handlers(get_handlers(%{broker: broker}))
 
-  def get_handlers(broker), do: MessageContext.handlers(broker).notification_event_listeners
+  def get_handlers(%{broker: broker}),
+    do: MessageContext.handlers(broker).notification_event_listeners
 
   @impl true
-  def initial_state(broker, table) do
+  def initial_state(%{broker: broker}, table) do
     %{prefetch_count: MessageContext.prefetch_count(broker), broker: broker, table: table}
   end
 

@@ -28,3 +28,4 @@ reactive_commons-*.tar
 log
 
 .vscode
+*.coverdata
