@@ -22,6 +22,7 @@ defmodule AsyncConfig do
        MessageExtractor: ExConn,
        MessageSender: ExConn,
        ListenerController: ExConn,
+       QueueListener: ExConn,
      },
      topology: %{
        command_sender: false,

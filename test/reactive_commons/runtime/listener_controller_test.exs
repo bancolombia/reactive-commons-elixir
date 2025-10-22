@@ -57,28 +57,28 @@ defmodule ListenerControllerTest do
             assert called(
                      DynamicSupervisor.start_child(
                        :"dynamic_supervisor_#{broker}",
-                       {QueryListener, broker}
+                       {QueryListener, %{broker: broker}}
                      )
                    )
 
             assert called(
                      DynamicSupervisor.start_child(
                        :"dynamic_supervisor_#{broker}",
-                       {EventListener, broker}
+                       {EventListener, %{broker: broker}}
                      )
                    )
 
             assert called(
                      DynamicSupervisor.start_child(
                        :"dynamic_supervisor_#{broker}",
-                       {NotificationEventListener, broker}
+                       {NotificationEventListener, %{broker: broker}}
                      )
                    )
 
             assert called(
                      DynamicSupervisor.start_child(
                        :"dynamic_supervisor_#{broker}",
-                       {CommandListener, broker}
+                       {CommandListener, %{broker: broker}}
                      )
                    )
           end
@@ -107,28 +107,28 @@ defmodule ListenerControllerTest do
             assert called(
                      DynamicSupervisor.start_child(
                        :"dynamic_supervisor_#{broker}",
-                       {QueryListener, broker}
+                       {QueryListener, %{broker: broker}}
                      )
                    )
 
             assert called(
                      DynamicSupervisor.start_child(
                        :"dynamic_supervisor_#{broker}",
-                       {EventListener, broker}
+                       {EventListener, %{broker: broker}}
                      )
                    )
 
             assert called(
                      DynamicSupervisor.start_child(
                        :"dynamic_supervisor_#{broker}",
-                       {NotificationEventListener, broker}
+                       {NotificationEventListener, %{broker: broker}}
                      )
                    )
 
             assert called(
                      DynamicSupervisor.start_child(
                        :"dynamic_supervisor_#{broker}",
-                       {CommandListener, broker}
+                       {CommandListener, %{broker: broker}}
                      )
                    )
           end
@@ -159,28 +159,28 @@ defmodule ListenerControllerTest do
             assert called(
                      DynamicSupervisor.start_child(
                        :"dynamic_supervisor_#{broker}",
-                       {QueryListener, broker}
+                       {QueryListener, %{broker: broker}}
                      )
                    )
 
             assert called(
                      DynamicSupervisor.start_child(
                        :"dynamic_supervisor_#{broker}",
-                       {EventListener, broker}
+                       {EventListener, %{broker: broker}}
                      )
                    )
 
             assert called(
                      DynamicSupervisor.start_child(
                        :"dynamic_supervisor_#{broker}",
-                       {NotificationEventListener, broker}
+                       {NotificationEventListener, %{broker: broker}}
                      )
                    )
 
             assert called(
                      DynamicSupervisor.start_child(
                        :"dynamic_supervisor_#{broker}",
-                       {CommandListener, broker}
+                       {CommandListener, %{broker: broker}}
                      )
                    )
           end
@@ -201,10 +201,10 @@ defmodule ListenerControllerTest do
           assert supervisor_name == :"dynamic_supervisor_#{broker}"
 
           assert child_spec in [
-                   {QueryListener, broker},
-                   {EventListener, broker},
-                   {NotificationEventListener, broker},
-                   {CommandListener, broker}
+                   {QueryListener, %{broker: broker}},
+                   {EventListener, %{broker: broker}},
+                   {NotificationEventListener, %{broker: broker}},
+                   {CommandListener, %{broker: broker}}
                  ]
 
           {:ok, listener_pid}
@@ -218,28 +218,28 @@ defmodule ListenerControllerTest do
             assert called(
                      DynamicSupervisor.start_child(
                        :"dynamic_supervisor_#{broker}",
-                       {QueryListener, broker}
+                       {QueryListener, %{broker: broker}}
                      )
                    )
 
             assert called(
                      DynamicSupervisor.start_child(
                        :"dynamic_supervisor_#{broker}",
-                       {EventListener, broker}
+                       {EventListener, %{broker: broker}}
                      )
                    )
 
             assert called(
                      DynamicSupervisor.start_child(
                        :"dynamic_supervisor_#{broker}",
-                       {NotificationEventListener, broker}
+                       {NotificationEventListener, %{broker: broker}}
                      )
                    )
 
             assert called(
                      DynamicSupervisor.start_child(
                        :"dynamic_supervisor_#{broker}",
-                       {CommandListener, broker}
+                       {CommandListener, %{broker: broker}}
                      )
                    )
           end
@@ -309,12 +309,17 @@ defmodule ListenerControllerTest do
           {:ok, pid} = ListenerController.start_link(broker)
 
           with :ok <- ListenerController.configure(config) do
-            assert called(DynamicSupervisor.start_child(:_, {QueryListener, broker}))
-            assert called(DynamicSupervisor.start_child(:_, {EventListener, broker}))
+            assert called(DynamicSupervisor.start_child(:_, {QueryListener, %{broker: broker}}))
+            assert called(DynamicSupervisor.start_child(:_, {EventListener, %{broker: broker}}))
 
-            assert called(DynamicSupervisor.start_child(:_, {NotificationEventListener, broker}))
+            assert called(
+                     DynamicSupervisor.start_child(
+                       :_,
+                       {NotificationEventListener, %{broker: broker}}
+                     )
+                   )
 
-            assert called(DynamicSupervisor.start_child(:_, {CommandListener, broker}))
+            assert called(DynamicSupervisor.start_child(:_, {CommandListener, %{broker: broker}}))
           end
 
           GenServer.stop(pid)

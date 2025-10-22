@@ -82,7 +82,7 @@ defmodule MessageRuntime do
         Supervisor.child_spec({ReplyRouter, broker},
           id: SafeAtom.to_atom("reply_router_#{broker}")
         ),
-        Supervisor.child_spec({ReplyListener, broker},
+        Supervisor.child_spec({ReplyListener, %{broker: broker}},
           id: SafeAtom.to_atom("reply_listener_#{broker}")
         ),
         Supervisor.child_spec({MessageSender, broker},

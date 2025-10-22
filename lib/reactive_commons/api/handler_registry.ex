@@ -37,6 +37,12 @@ defmodule HandlerRegistry do
   def listen_notification_event(conf = %Conf{}, path, handler),
     do: Conf.add_listener(conf, :notification_event_listeners, path, handler)
 
+  def listen_queue(broker, queue_name, handler) when not is_struct(broker),
+    do: Conf.new(broker) |> listen_queue(queue_name, handler)
+
+  def listen_queue(conf = %Conf{}, queue_name, handler),
+    do: Conf.add_listener(conf, :queue_listeners, queue_name, handler)
+
   def invalid_message_handler(conf = %Conf{}, handler),
     do: Conf.add_listener(conf, :invalid_message_handlers, "error", handler)
 

@@ -41,10 +41,17 @@ defmodule ListenerController do
 
   defp start_listeners(broker) do
     Logger.info("ListenerController: Starting listeners for broker #{broker}")
-    DynamicSupervisor.start_child(get_name(broker), {QueryListener, broker})
-    DynamicSupervisor.start_child(get_name(broker), {EventListener, broker})
-    DynamicSupervisor.start_child(get_name(broker), {NotificationEventListener, broker})
-    DynamicSupervisor.start_child(get_name(broker), {CommandListener, broker})
+    supervisor_name = get_name(broker)
+    args = %{broker: broker}
+    DynamicSupervisor.start_child(supervisor_name, {QueryListener, args})
+    DynamicSupervisor.start_child(supervisor_name, {EventListener, args})
+    DynamicSupervisor.start_child(supervisor_name, {NotificationEventListener, args})
+    DynamicSupervisor.start_child(supervisor_name, {CommandListener, args})
+
+    Enum.each(
+      QueueListener.get_childrens(broker),
+      &DynamicSupervisor.start_child(supervisor_name, &1)
+    )
   end
 
   defp build_name(broker), do: SafeAtom.to_atom("listener_controller_#{broker}")

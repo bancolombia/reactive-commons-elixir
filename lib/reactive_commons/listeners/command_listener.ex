@@ -6,15 +6,15 @@ defmodule CommandListener do
 
   @impl true
   def should_listen(broker) do
-    ListenersValidator.has_handlers(get_handlers(broker))
+    ListenersValidator.has_handlers(get_handlers(%{broker: broker}))
   end
 
-  def get_handlers(broker) do
+  def get_handlers(%{broker: broker}) do
     MessageContext.handlers(broker).command_listeners
   end
 
   @impl true
-  def initial_state(broker, table) do
+  def initial_state(%{broker: broker}, table) do
     queue_name = MessageContext.command_queue_name(broker)
     prefetch_count = MessageContext.prefetch_count(broker)
     %{prefetch_count: prefetch_count, queue_name: queue_name, broker: broker, table: table}

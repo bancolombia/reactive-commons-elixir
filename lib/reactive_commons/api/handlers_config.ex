@@ -5,6 +5,7 @@ defmodule HandlersConfig do
             notification_event_listeners: %{},
             command_listeners: %{},
             invalid_message_handlers: %{},
+            queue_listeners: %{},
             broker: :app
 
   @type listener_type ::
@@ -13,6 +14,7 @@ defmodule HandlersConfig do
           | :notification_event_listeners
           | :command_listeners
           | :invalid_message_handlers
+          | :queue_listeners
 
   @spec add_listener(t(), listener_type(), String.t(), any()) :: t()
 
@@ -22,6 +24,7 @@ defmodule HandlersConfig do
           notification_event_listeners: %{String.t() => any()},
           command_listeners: %{String.t() => any()},
           invalid_message_handlers: %{String.t() => any()},
+          queue_listeners: %{String.t() => any()},
           broker: atom()
         }
 

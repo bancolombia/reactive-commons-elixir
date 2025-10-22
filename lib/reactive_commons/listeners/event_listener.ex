@@ -3,12 +3,12 @@ defmodule EventListener do
   use GenericListener, executor: EventExecutor
 
   @impl true
-  def should_listen(broker), do: ListenersValidator.has_handlers(get_handlers(broker))
+  def should_listen(broker), do: ListenersValidator.has_handlers(get_handlers(%{broker: broker}))
 
-  def get_handlers(broker), do: MessageContext.handlers(broker).event_listeners
+  def get_handlers(%{broker: broker}), do: MessageContext.handlers(broker).event_listeners
 
   @impl true
-  def initial_state(broker, table) do
+  def initial_state(%{broker: broker}, table) do
     queue_name = MessageContext.event_queue_name(broker)
     prefetch_count = MessageContext.prefetch_count(broker)
     %{prefetch_count: prefetch_count, queue_name: queue_name, broker: broker, table: table}
