@@ -51,7 +51,7 @@ defmodule ReactiveCommons.MixProject do
       {:uuid, "~> 1.1"},
       {:telemetry, "~> 1.3"},
       {:opentelemetry_reactive_commons, "~> 1.0", optional: true},
-      {:jason, "~> 1.2 or ~> 1.3"},
+      {:jason, "~> 1.2 or ~> 1.3 or ~> 1.4"},
       # Documentation
       {:ex_doc, ">= 0.0.0", only: [:dev, :test], runtime: false},
       # Tests and Analysis

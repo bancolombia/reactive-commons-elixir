@@ -138,10 +138,10 @@ defmodule RabbitConnectionTest do
 
     test "handles max retries reached scenario" do
       opts = [connection_props: [host: "invalid_host", port: 9999]]
-      state = %RabbitConnection{name: :test, parent_pid: nil, connection: nil}
+      state = %RabbitConnection{name: :test, parent_pid: nil, connection: nil, opts: opts}
 
       assert {:stop, :max_reconnect_failed, ^state} =
-               RabbitConnection.handle_info({:connect, opts, 5}, state)
+               RabbitConnection.handle_info({:connect, 5}, state)
     end
 
     test "sends notification to parent when connection succeeds" do
@@ -156,9 +156,9 @@ defmodule RabbitConnectionTest do
 
     test "schedules reconnection on failure with valid retry count" do
       opts = [connection_props: [host: "invalid_host", port: 9999]]
-      state = %RabbitConnection{name: :test, parent_pid: nil, connection: nil}
+      state = %RabbitConnection{name: :test, parent_pid: nil, connection: nil, opts: opts}
 
-      result = RabbitConnection.handle_info({:connect, opts, 2}, state)
+      result = RabbitConnection.handle_info({:connect, 2}, state)
 
       assert match?({:noreply, _}, result) or match?({:stop, :max_reconnect_failed, _}, result)
     end
@@ -318,6 +318,23 @@ defmodule RabbitConnectionTest do
       elapsed = end_time - start_time
 
       assert elapsed >= 5000
+    end
+  end
+
+  describe "log_reason/1" do
+    test "Should log tls reason" do
+      reason = {:server_sent_malformed_header, <<21, 3, 3, 0, 2, 2, 10>>}
+      log = RabbitConnection.log_reason(reason)
+
+      assert log ==
+               "#{inspect(reason)} -> The server closed the connection because it requires a TLS connection. Please check your RabbitMQ connection properties and pass ssl_options."
+    end
+
+    test "Should log other reasons" do
+      reason = :connection_refused
+      log = RabbitConnection.log_reason(reason)
+
+      assert log == inspect(reason)
     end
   end
 end
