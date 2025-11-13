@@ -29,3 +29,5 @@ log
 
 .vscode
 *.coverdata
+docs
+.github/workflows/docs.yml
