@@ -41,7 +41,7 @@ jobs:
         env:
           HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
       - name: Generate Changelog
-        uses: heinrichreimer/github-changelog-generator-action@v2
+        uses: heinrichreimer/github-changelog-generator-action@v2.4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pullRequests: true
@@ -50,7 +50,7 @@ jobs:
           issuesWoLabels: true
           stripGeneratorNotice: true
       - name: Save version
-        uses: github-actions-x/commit@v2
+        uses: github-actions-x/commit@v2.9
         with:
           github-token: ${{ steps.generate_token.outputs.token }}
           push-branch: main
