@@ -28,12 +28,12 @@ defmodule QueryServer.SubsConfig do
     |> HandlerRegistry.handle_command(@command_name, fn command ->
       register_person(command, broker)
     end)
-    |> HandlerRegistry.listen_queue("custom-queue_name.with.dots", fn message ->
-      IO.puts("Handling queue message #{inspect(message)} in broker #{broker}")
-    end)
-    |> HandlerRegistry.listen_queue("custom-queue_name.with.trees", fn message ->
-      IO.puts("Handling queue message #{inspect(message)} in broker #{broker}")
-    end)
+    # |> HandlerRegistry.listen_queue("custom-queue_name.with.dots", fn message ->
+    #   IO.puts("Handling queue message #{inspect(message)} in broker #{broker}")
+    # end)
+    # |> HandlerRegistry.listen_queue("custom-queue_name.with.trees", fn message ->
+    #   IO.puts("Handling queue message #{inspect(message)} in broker #{broker}")
+    # end)
     |> HandlerRegistry.invalid_message_handler(fn type, invalid_msg ->
       IO.puts("Handling invalid message #{inspect(invalid_msg)} in broker #{broker}")
       :shandled

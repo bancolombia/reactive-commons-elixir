@@ -20,6 +20,7 @@ defmodule QueryListener do
     broker = state.broker
     direct_exchange_name = MessageContext.direct_exchange_name(broker)
     query_queue_name = MessageContext.query_queue_name(broker)
+    queue_type = MessageContext.queue_type(broker)
 
     # Exchange
     :ok = AMQP.Exchange.declare(chan, direct_exchange_name, :direct, durable: true)
@@ -32,7 +33,11 @@ defmodule QueryListener do
           chan,
           query_queue_name,
           durable: true,
-          arguments: [{"x-dead-letter-exchange", :longstr, direct_exchange_name <> ".DLQ"}]
+          arguments:
+            TopologyUtils.set_queue_type(
+              [{"x-dead-letter-exchange", :longstr, direct_exchange_name <> ".DLQ"}],
+              queue_type
+            )
         )
 
       {:ok, _} =
@@ -51,7 +56,11 @@ defmodule QueryListener do
           routing_key: query_queue_name
         )
     else
-      {:ok, _} = AMQP.Queue.declare(chan, query_queue_name, durable: true)
+      {:ok, _} =
+        AMQP.Queue.declare(chan, query_queue_name,
+          durable: true,
+          arguments: TopologyUtils.set_queue_type([], queue_type)
+        )
     end
 
     # Bindings

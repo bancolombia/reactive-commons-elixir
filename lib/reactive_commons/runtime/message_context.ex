@@ -31,7 +31,8 @@ defmodule MessageContext do
     with_dlq_retry: false,
     retry_delay: 500,
     max_retries: 10,
-    prefetch_count: 250
+    prefetch_count: 250,
+    queue_type: nil
   }
 
   def start_link(config = %AsyncConfig{}) do
@@ -123,6 +124,7 @@ defmodule MessageContext do
   def prefetch_count(broker), do: config(broker).prefetch_count
   def application_name(broker), do: config(broker).application_name
   def topology(broker), do: config(broker).topology
+  def queue_type(broker), do: config(broker).queue_type
 
   def config(broker) do
     table = ets_table_name(broker)

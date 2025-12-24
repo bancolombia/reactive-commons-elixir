@@ -18,6 +18,7 @@ defmodule EventListener do
   def create_topology(chan, state = %{broker: broker, table: table}) do
     # Topology
     event_queue_name = MessageContext.event_queue_name(broker)
+    queue_type = MessageContext.queue_type(broker)
     events_exchange_name = MessageContext.events_exchange_name(broker)
     app_name = MessageContext.application_name(broker)
     retry_delay = MessageContext.retry_delay(broker)
@@ -36,7 +37,11 @@ defmodule EventListener do
           chan,
           event_queue_name,
           durable: true,
-          arguments: [{"x-dead-letter-exchange", :longstr, events_dlq_exchange_name}]
+          arguments:
+            TopologyUtils.set_queue_type(
+              [{"x-dead-letter-exchange", :longstr, events_dlq_exchange_name}],
+              queue_type
+            )
         )
 
       :ok =
@@ -46,7 +51,11 @@ defmodule EventListener do
 
       :ok = AMQP.Queue.bind(chan, event_queue_name, retry_exchange_name, routing_key: "#")
     else
-      {:ok, _} = AMQP.Queue.declare(chan, event_queue_name, durable: true)
+      {:ok, _} =
+        AMQP.Queue.declare(chan, event_queue_name,
+          durable: true,
+          arguments: TopologyUtils.set_queue_type([], queue_type)
+        )
     end
 
     # Bindings

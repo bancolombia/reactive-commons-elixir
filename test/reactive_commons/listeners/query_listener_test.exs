@@ -115,7 +115,8 @@ defmodule QueryListenerTest do
          [
            direct_exchange_name: fn ^broker -> direct_exchange end,
            query_queue_name: fn ^broker -> query_queue end,
-           with_dlq_retry: fn ^broker -> false end
+           with_dlq_retry: fn ^broker -> false end,
+           queue_type: fn ^broker -> nil end
          ]},
         {AMQP.Exchange, [:passthrough],
          [
@@ -133,7 +134,7 @@ defmodule QueryListenerTest do
 
         assert_called(AMQP.Exchange.declare(chan, direct_exchange, :direct, durable: true))
 
-        assert_called(AMQP.Queue.declare(chan, query_queue, durable: true))
+        assert_called(AMQP.Queue.declare(chan, query_queue, durable: true, arguments: []))
 
         assert_called(
           AMQP.Queue.bind(chan, query_queue, direct_exchange, routing_key: query_queue)
@@ -160,7 +161,8 @@ defmodule QueryListenerTest do
            direct_exchange_name: fn ^broker -> direct_exchange end,
            query_queue_name: fn ^broker -> query_queue end,
            with_dlq_retry: fn ^broker -> true end,
-           retry_delay: fn ^broker -> retry_delay end
+           retry_delay: fn ^broker -> retry_delay end,
+           queue_type: fn ^broker -> nil end
          ]},
         {AMQP.Exchange, [:passthrough],
          [
@@ -214,7 +216,8 @@ defmodule QueryListenerTest do
          [
            direct_exchange_name: fn ^broker -> direct_exchange end,
            query_queue_name: fn ^broker -> query_queue end,
-           with_dlq_retry: fn ^broker -> false end
+           with_dlq_retry: fn ^broker -> false end,
+           queue_type: fn ^broker -> nil end
          ]},
         {AMQP.Exchange, [:passthrough],
          [
@@ -247,7 +250,8 @@ defmodule QueryListenerTest do
            query_queue_name: fn ^broker -> queue_name end,
            prefetch_count: fn ^broker -> prefetch_count end,
            direct_exchange_name: fn ^broker -> direct_exchange end,
-           with_dlq_retry: fn ^broker -> false end
+           with_dlq_retry: fn ^broker -> false end,
+           queue_type: fn ^broker -> "quorum" end
          ]},
         {ListenersValidator, [:passthrough],
          [
@@ -288,7 +292,14 @@ defmodule QueryListenerTest do
         assert_called(MessageContext.direct_exchange_name(broker))
         assert_called(MessageContext.with_dlq_retry(broker))
         assert_called(AMQP.Exchange.declare(chan, direct_exchange, :direct, durable: true))
-        assert_called(AMQP.Queue.declare(chan, queue_name, durable: true))
+
+        assert_called(
+          AMQP.Queue.declare(chan, queue_name,
+            durable: true,
+            arguments: [{"x-queue-type", :longstr, "quorum"}]
+          )
+        )
+
         assert_called(AMQP.Queue.bind(chan, queue_name, direct_exchange, routing_key: queue_name))
       end
     end

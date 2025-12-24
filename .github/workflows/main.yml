@@ -27,26 +27,26 @@ jobs:
         with:
           app_id: ${{ secrets.APP_ID_ADMIN_GITHUB }}
           private_key: ${{ secrets.APP_PRIVATE_KEY_ADMIN_GITHUB }}
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           token: ${{ steps.generate_token.outputs.token }}
       # Semantic Release
       - name: Verify Conventional Commits
-        uses: amannn/action-semantic-pull-request@v5
+        uses: amannn/action-semantic-pull-request@v6
         if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up NodeJS
         if: github.ref == 'refs/heads/main'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
       - name: Set up Semantic Release
         if: github.ref == 'refs/heads/main'
-        run: npm -g install @semantic-release/git semantic-release@23.0.0
+        run: npm -g install @semantic-release/git semantic-release
       - name: Semantic Release
         if: github.ref == 'refs/heads/main'
-        run: npx semantic-release@23.0.0
+        run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
       # Elixir
@@ -56,7 +56,7 @@ jobs:
           version-type: strict
           version-file: ".tool-versions"
       - name: Restore dependencies cache
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: deps
           key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
@@ -85,7 +85,7 @@ jobs:
         uses: hrishikesh-kadam/setup-lcov@v1
       - name: Validate code coverage
         if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
-        uses: zgosalvez/github-actions-report-lcov@v4
+        uses: zgosalvez/github-actions-report-lcov@v5
         with:
           coverage-files: cover/lcov.info
           minimum-coverage: 5 # TODO: Add minimum coverage
