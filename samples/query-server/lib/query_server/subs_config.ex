@@ -1,23 +1,10 @@
 defmodule QueryServer.SubsConfig do
-  use GenServer
-
   @query_name "GetPerson"
   @command_name "RegisterPerson"
   @event_name "PersonRegistered"
   @notification_event_name "ConfigurationChanged"
 
-  def start_link(args) do
-    GenServer.start_link(__MODULE__, args, name: __MODULE__)
-  end
-
-  @impl true
-  def init(args) do
-    config_broker(:app)
-    config_broker(:app2)
-    {:ok, nil}
-  end
-
-  defp config_broker(broker) do
+  def config_broker(broker) do
     HandlerRegistry.listen_event(broker, @event_name, fn event ->
       person_registered(event, broker)
     end)
@@ -38,7 +25,6 @@ defmodule QueryServer.SubsConfig do
       IO.puts("Handling invalid message #{inspect(invalid_msg)} in broker #{broker}")
       :shandled
     end)
-    |> HandlerRegistry.commit_config()
   end
 
   def get_person(%{} = request, broker) do
