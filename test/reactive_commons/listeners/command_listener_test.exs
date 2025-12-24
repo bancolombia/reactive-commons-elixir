@@ -168,7 +168,8 @@ defmodule CommandListenerTest do
          [
            direct_exchange_name: fn ^broker -> direct_exchange end,
            command_queue_name: fn ^broker -> command_queue end,
-           with_dlq_retry: fn ^broker -> false end
+           with_dlq_retry: fn ^broker -> false end,
+           queue_type: fn ^broker -> nil end
          ]},
         {AMQP.Exchange, [:passthrough],
          [
@@ -186,7 +187,7 @@ defmodule CommandListenerTest do
 
         assert_called(AMQP.Exchange.declare(chan, direct_exchange, :direct, durable: true))
 
-        assert_called(AMQP.Queue.declare(chan, command_queue, durable: true))
+        assert_called(AMQP.Queue.declare(chan, command_queue, durable: true, arguments: []))
 
         assert_called(
           AMQP.Queue.bind(chan, command_queue, direct_exchange, routing_key: command_queue)
@@ -213,7 +214,8 @@ defmodule CommandListenerTest do
            direct_exchange_name: fn ^broker -> direct_exchange end,
            command_queue_name: fn ^broker -> command_queue end,
            with_dlq_retry: fn ^broker -> true end,
-           retry_delay: fn ^broker -> retry_delay end
+           retry_delay: fn ^broker -> retry_delay end,
+           queue_type: fn ^broker -> nil end
          ]},
         {AMQP.Exchange, [:passthrough],
          [
@@ -267,7 +269,8 @@ defmodule CommandListenerTest do
          [
            direct_exchange_name: fn ^broker -> direct_exchange end,
            command_queue_name: fn ^broker -> command_queue end,
-           with_dlq_retry: fn ^broker -> false end
+           with_dlq_retry: fn ^broker -> false end,
+           queue_type: fn ^broker -> nil end
          ]},
         {AMQP.Exchange, [:passthrough],
          [
@@ -294,7 +297,8 @@ defmodule CommandListenerTest do
          [
            direct_exchange_name: fn ^broker -> direct_exchange end,
            command_queue_name: fn ^broker -> command_queue end,
-           with_dlq_retry: fn ^broker -> false end
+           with_dlq_retry: fn ^broker -> false end,
+           queue_type: fn ^broker -> nil end
          ]},
         {AMQP.Exchange, [:passthrough],
          [
@@ -326,7 +330,8 @@ defmodule CommandListenerTest do
              direct_exchange_name: fn ^broker -> direct_exchange end,
              command_queue_name: fn ^broker -> command_queue end,
              with_dlq_retry: fn ^broker -> true end,
-             retry_delay: fn ^broker -> retry_delay end
+             retry_delay: fn ^broker -> retry_delay end,
+             queue_type: fn ^broker -> nil end
            ]},
           {AMQP.Exchange, [:passthrough],
            [
@@ -357,7 +362,8 @@ defmodule CommandListenerTest do
          [
            direct_exchange_name: fn ^broker -> "test.exchange" end,
            command_queue_name: fn ^broker -> "test.queue" end,
-           with_dlq_retry: fn ^broker -> false end
+           with_dlq_retry: fn ^broker -> false end,
+           queue_type: fn ^broker -> nil end
          ]},
         {AMQP.Exchange, [:passthrough],
          [
@@ -382,7 +388,8 @@ defmodule CommandListenerTest do
          [
            direct_exchange_name: fn ^broker -> "test.exchange" end,
            command_queue_name: fn ^broker -> "test.queue" end,
-           with_dlq_retry: fn ^broker -> false end
+           with_dlq_retry: fn ^broker -> false end,
+           queue_type: fn ^broker -> nil end
          ]},
         {AMQP.Exchange, [:passthrough],
          [
@@ -410,7 +417,8 @@ defmodule CommandListenerTest do
            direct_exchange_name: fn ^broker -> "test.exchange" end,
            command_queue_name: fn ^broker -> "test.queue" end,
            with_dlq_retry: fn ^broker -> true end,
-           retry_delay: fn ^broker -> 5000 end
+           retry_delay: fn ^broker -> 5000 end,
+           queue_type: fn ^broker -> nil end
          ]},
         {AMQP.Exchange, [:passthrough],
          [
@@ -446,7 +454,8 @@ defmodule CommandListenerTest do
            command_queue_name: fn ^broker -> queue_name end,
            prefetch_count: fn ^broker -> prefetch_count end,
            direct_exchange_name: fn ^broker -> direct_exchange end,
-           with_dlq_retry: fn ^broker -> false end
+           with_dlq_retry: fn ^broker -> false end,
+           queue_type: fn ^broker -> nil end
          ]},
         {ListenersValidator, [:passthrough],
          [
@@ -487,7 +496,7 @@ defmodule CommandListenerTest do
         assert_called(MessageContext.direct_exchange_name(broker))
         assert_called(MessageContext.with_dlq_retry(broker))
         assert_called(AMQP.Exchange.declare(chan, direct_exchange, :direct, durable: true))
-        assert_called(AMQP.Queue.declare(chan, queue_name, durable: true))
+        assert_called(AMQP.Queue.declare(chan, queue_name, durable: true, arguments: []))
         assert_called(AMQP.Queue.bind(chan, queue_name, direct_exchange, routing_key: queue_name))
       end
     end
@@ -510,7 +519,8 @@ defmodule CommandListenerTest do
            prefetch_count: fn ^broker -> prefetch_count end,
            direct_exchange_name: fn ^broker -> direct_exchange end,
            with_dlq_retry: fn ^broker -> true end,
-           retry_delay: fn ^broker -> retry_delay end
+           retry_delay: fn ^broker -> retry_delay end,
+           queue_type: fn ^broker -> nil end
          ]},
         {ListenersValidator, [:passthrough],
          [

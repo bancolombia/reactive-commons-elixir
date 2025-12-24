@@ -13,7 +13,7 @@ jobs:
         with:
           app_id: ${{ secrets.APP_ID_ADMIN_GITHUB }}
           private_key: ${{ secrets.APP_PRIVATE_KEY_ADMIN_GITHUB }}
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           token: ${{ steps.generate_token.outputs.token }}
       - name: Set up Elixir
@@ -22,7 +22,7 @@ jobs:
           version-type: strict
           version-file: ".tool-versions"
       - name: Restore dependencies cache
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: deps
           key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
@@ -41,7 +41,7 @@ jobs:
         env:
           HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
       - name: Generate Changelog
-        uses: heinrichreimer/github-changelog-generator-action@v2.3
+        uses: heinrichreimer/github-changelog-generator-action@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pullRequests: true
@@ -50,7 +50,7 @@ jobs:
           issuesWoLabels: true
           stripGeneratorNotice: true
       - name: Save version
-        uses: github-actions-x/commit@v2.9
+        uses: github-actions-x/commit@v2
         with:
           github-token: ${{ steps.generate_token.outputs.token }}
           push-branch: main

@@ -34,6 +34,7 @@ defmodule AsyncConfig do
      retry_delay: 500,
      max_retries: 10,
      prefetch_count: 250,
+     queue_type: nil
     }
     ```
   """
@@ -57,7 +58,8 @@ defmodule AsyncConfig do
     :max_retries,
     :prefetch_count,
     :broker,
-    extractor_debug: false
+    extractor_debug: false,
+    queue_type: nil
   ]
 
   @doc """

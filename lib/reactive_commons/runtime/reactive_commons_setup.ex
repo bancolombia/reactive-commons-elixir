@@ -67,6 +67,9 @@ defmodule ReactiveCommonsSetup do
         %HandlersConfig{broker: broker}
       end
 
+      # keep this default to avoid user define old style handlers_config/0
+      defp handlers_config, do: :ignore
+
       defoverridable handlers_config: 1
     end
   end

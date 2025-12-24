@@ -142,7 +142,8 @@ defmodule EventListenerTest do
            event_queue_name: fn ^broker -> event_queue end,
            events_exchange_name: fn ^broker -> events_exchange end,
            with_dlq_retry: fn ^broker -> false end,
-           retry_delay: fn ^broker -> 2 end
+           retry_delay: fn ^broker -> 2 end,
+           queue_type: fn ^broker -> nil end
          ]},
         {AMQP.Exchange, [:passthrough],
          [
@@ -160,7 +161,7 @@ defmodule EventListenerTest do
 
         assert called(AMQP.Exchange.declare(chan, events_exchange, :topic, durable: true))
 
-        assert called(AMQP.Queue.declare(chan, event_queue, durable: true))
+        assert called(AMQP.Queue.declare(chan, event_queue, durable: true, arguments: []))
 
         assert called(
                  AMQP.Queue.bind(chan, event_queue, events_exchange, routing_key: "user.created")
@@ -197,7 +198,8 @@ defmodule EventListenerTest do
            events_exchange_name: fn ^broker -> events_exchange end,
            application_name: fn ^broker -> app_name end,
            retry_delay: fn ^broker -> retry_delay end,
-           with_dlq_retry: fn ^broker -> true end
+           with_dlq_retry: fn ^broker -> true end,
+           queue_type: fn ^broker -> nil end
          ]},
         {AMQP.Exchange, [:passthrough],
          [
@@ -256,7 +258,8 @@ defmodule EventListenerTest do
            event_queue_name: fn ^broker -> event_queue end,
            events_exchange_name: fn ^broker -> events_exchange end,
            with_dlq_retry: fn ^broker -> false end,
-           retry_delay: fn ^broker -> 2 end
+           retry_delay: fn ^broker -> 2 end,
+           queue_type: fn ^broker -> nil end
          ]},
         {AMQP.Exchange, [:passthrough],
          [
@@ -273,7 +276,7 @@ defmodule EventListenerTest do
         assert result == {:ok, state}
 
         assert_called(AMQP.Exchange.declare(chan, events_exchange, :topic, durable: true))
-        assert_called(AMQP.Queue.declare(chan, event_queue, durable: true))
+        assert_called(AMQP.Queue.declare(chan, event_queue, durable: true, arguments: []))
       end
     end
 
@@ -293,7 +296,8 @@ defmodule EventListenerTest do
            event_queue_name: fn ^broker -> event_queue end,
            events_exchange_name: fn ^broker -> events_exchange end,
            with_dlq_retry: fn ^broker -> false end,
-           retry_delay: fn ^broker -> 2 end
+           retry_delay: fn ^broker -> 2 end,
+           queue_type: fn ^broker -> nil end
          ]},
         {AMQP.Exchange, [:passthrough],
          [
@@ -357,6 +361,7 @@ defmodule EventListenerTest do
         event_queue_name: fn ^broker -> "test.queue" end,
         events_exchange_name: fn ^broker -> "test.exchange" end,
         with_dlq_retry: fn ^broker -> false end,
+        queue_type: fn ^broker -> nil end,
         retry_delay: fn ^broker -> 2 end do
         with_mock AMQP.Exchange, [:passthrough], declare: fn _, _, _, _ -> :ok end do
           with_mock AMQP.Queue, [:passthrough],
@@ -395,7 +400,8 @@ defmodule EventListenerTest do
              event_queue_name: fn ^broker -> "test.queue" end,
              events_exchange_name: fn ^broker -> "test.exchange" end,
              with_dlq_retry: fn ^broker -> false end,
-             retry_delay: fn ^broker -> 2 end
+             retry_delay: fn ^broker -> 2 end,
+             queue_type: fn ^broker -> nil end
            ]},
           {AMQP.Exchange, [:passthrough], [declare: fn _, _, _, _ -> :ok end]},
           {AMQP.Queue, [:passthrough],
@@ -423,7 +429,8 @@ defmodule EventListenerTest do
            event_queue_name: fn ^broker -> "test.queue" end,
            events_exchange_name: fn ^broker -> "test.exchange" end,
            with_dlq_retry: fn ^broker -> false end,
-           retry_delay: fn ^broker -> 2 end
+           retry_delay: fn ^broker -> 2 end,
+           queue_type: fn ^broker -> nil end
          ]},
         {AMQP.Exchange, [:passthrough],
          [
@@ -446,7 +453,8 @@ defmodule EventListenerTest do
          [
            event_queue_name: fn ^broker -> "test.queue" end,
            events_exchange_name: fn ^broker -> "test.exchange" end,
-           with_dlq_retry: fn ^broker -> false end
+           with_dlq_retry: fn ^broker -> false end,
+           queue_type: fn ^broker -> nil end
          ]},
         {AMQP.Exchange, [:passthrough], [declare: fn _, _, _, _ -> :ok end]},
         {AMQP.Queue, [:passthrough], [declare: fn _, _, _ -> {:ok, %{}} end]}
@@ -490,7 +498,8 @@ defmodule EventListenerTest do
            events_exchange_name: fn ^broker -> events_exchange end,
            application_name: fn ^broker -> app_name end,
            retry_delay: fn ^broker -> retry_delay end,
-           with_dlq_retry: fn ^broker -> true end
+           with_dlq_retry: fn ^broker -> true end,
+           queue_type: fn ^broker -> nil end
          ]},
         {ListenersValidator, [:passthrough],
          [
